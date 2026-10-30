@@ -1,0 +1,49 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Docker: Start Development",
+            "type": "shell",
+            "command": "docker compose up --build -d",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: Stop Development",
+            "type": "shell",
+            "command": "docker compose down",
+            "problemMatcher": []
+        },
+        {
+            "label": "Django: Make Migrations",
+            "type": "shell",
+            "command": "docker compose exec web python manage.py makemigrations",
+            "problemMatcher": []
+        },
+        {
+            "label": "Django: Apply Migration",
+            "type": "shell",
+            "command": "docker compose exec web python manage.py migrate",
+            "problemMatcher": []
+        },
+        {
+            "label": "Django: Run Tests",
+            "type": "shell",
+            "command": "docker compose exec web python manage.py test",
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Django: Create Superuser",
+            "type": "shell",
+            "command": "docker compose exec web python manage.py createsuperuser",
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: View Logs",
+            "type": "shell",
+            "command": "docker compose logs -f",
+            "problemMatcher": []
+        }
+    ]
+}

@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+
+'''Django command-line entry point'''
+
+import os
+import sys
+
+def main() -> None:
+    '''
+        Run Django management commands
+    '''
+    os.environ.setdefault(
+        key="DJANGO_SETTINGS_MODULE",
+        value="config.settings.development",
+    )
+
+    from django.core.management import execute_from_command_line
+
+    execute_from_command_line(sys.argv)
+
+if __name__ == '__main__':
+    main()

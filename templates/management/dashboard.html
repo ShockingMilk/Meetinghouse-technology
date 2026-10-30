@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}ManagementDashboard{% endblock %}
+
+{% block content %}
+<h2>Technology Management Dashboard</h2>
+
+<div class="dashboard-grid">
+    <section class="panel">
+        <h3>Total Assets</h3>
+        <p class="metric">{{ asset_count }}</p>
+        <a href="{% url 'inventory:asset_list' %}">
+            View Inventory
+        </a>
+    </section>
+
+    <section class="panel">
+        <h3>Active Assets</h3>
+        <p class="metric">{{ active_asset_count }}</p>
+    </section>
+
+    <section class="panel">
+        <h3>Ownership to Verify</h3>
+        <p class="metric">{{ unknown_ownership_count }}</p>
+    </section>
+</div>
+
+<section class="panel">
+    <h3>Management Tools</h3>
+
+    <ul>
+        <li>
+            <a href="{% url 'inventory:asset_list' %}">
+                Building technology inventory
+            </a>
+        </li>
+        <li>
+            <a href="/admin/">
+                Administration
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'training:index' %}">
+                Training and documentation
+            </a>
+        </li>
+    </ul>
+</section>
+{% endblock %}

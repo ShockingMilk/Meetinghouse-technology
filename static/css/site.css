@@ -1,0 +1,150 @@
+:root {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #222;
+    background: #f4f5f7;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+}
+
+a {
+    color: #185a8d;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+.container {
+    width: min(1100px, 94%);
+    margin: 0 auto;
+}
+
+.site-header {
+    background: #263746;
+    color: white;
+    padding: 1rem 0;
+}
+
+.site-header h1 {
+    margin: 0 0 0.8rem;
+}
+
+.site-header nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.site-header nav a {
+    color: white;
+}
+
+.site-header nav form {
+    margin: 0;
+}
+
+.site-header button {
+    padding: 0.3rem 0.7rem;
+}
+
+main {
+    min-height: 70vh;
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+}
+
+.panel {
+    background: white;
+    border: 1px solid #d8dce1;
+    border-radius: 6px;
+    padding: 1.2rem;
+    margin-bottom: 1.2rem;
+}
+
+.narrow {
+    max-width: 500px;
+    margin: 2rem auto;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.metric {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: minmax(150px, 220px) 1fr;
+    gap: 0.7rem;
+}
+
+.details-grid dt {
+    font-weight: bold;
+}
+
+.details-grid dd {
+    margin: 0;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th,
+td {
+    text-align: left;
+    padding: 0.7rem;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background: #e9edf1;
+}
+
+input,
+button {
+    padding: 0.6rem;
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.search-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.message {
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+    background: #e5f2e8;
+    border: 1px solid #b9d8c1;
+}
+
+.site-footer {
+    background: #e6e9ed;
+    padding: 1rem 0;
+    font-size: 0.9rem;
+}

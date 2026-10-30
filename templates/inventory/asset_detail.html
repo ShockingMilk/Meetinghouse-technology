@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}{{ asset.name }}{% endblock %}
+
+{% block content %}
+<h2>{{ asset.name }}</h2>
+
+<section class="panel">
+    <h3>Asset Information</h3>
+
+    <dl class="details-grid">
+        <dt>Inventory Number</dt>
+        <dd>{{ asset.inventory_number }}</dd>
+
+        <dt>Category</dt>
+        <dd>{{ asset.get_category_display }}</dd>
+
+        <dt>Manufacturer</dt>
+        <dd>{{ asset.manufacturer|default:"Unknown" }}</dd>
+
+        <dt>Model</dt>
+        <dd>{{ asset.model_number|default:"Unknown" }}</dd>
+
+        <dt>Serial Number</dt>
+        <dd>{{ asset.serial_number|default:"Unknown" }}</dd>
+
+        <dt>Ownership</dt>
+        <dd>{{ asset.get_ownership_display }}</dd>
+
+        <dt>Condition</dt>
+        <dd>{{ asset.get_condition_display }}</dd>
+
+        <dt>Status</dt>
+        <dd>{{ asset.get_status_display }}</dd>
+
+        <dt>Room</dt>
+        <dd>{{ asset.room|default:"Not assigned" }}</dd>
+
+        <dt>Physical Location</dt>
+        <dd>{{ asset.physical_location|default:"Not recorded" }}</dd>
+    </dl>
+</section>
+
+<section class="panel">
+    <h3>Outgoing Connections</h3>
+
+    <ul>
+        {% for connection in asset.outgoing_connections.all %}
+            <li>
+                {{ connection.get_connection_type_display }}
+                via
+                {{ connection.get_connection_medium_display }}
+                →
+                {{ connection.destination }}
+                ({{ connection.get_compatibility_display }})
+            </li>
+        {% empty %}
+            <li>No outgoing connections recorded.</li>
+        {% endfor %}
+    </ul>
+</section>
+
+<section class="panel">
+    <h3>Incoming Connections</h3>
+
+    <ul>
+        {% for connection in asset.incoming_connections.all %}
+            <li>
+                {{ connection.source }}
+                →
+                {{ connection.get_connection_type_display }}
+                via
+                {{ connection.get_connection_medium_display }}
+            </li>
+        {% empty %}
+            <li>No incoming connections recorded.</li>
+        {% endfor %}
+    </ul>
+</section>
+
+<section class="panel">
+    <h3>Installed Software</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Software</th>
+                <th>Version</th>
+                <th>Role</th>
+                <th>Enabled</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for software in asset.software_installations.all %}
+                <tr>
+                    <td>{{ software.name }}</td>
+                    <td>{{ software.version|default:"Unknown" }}</td>
+                    <td>{{ software.get_role_display }}</td>
+                    <td>{{ software.is_enabled|yesno:"Yes,No" }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4">No software records.</td>
+                </td>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+{% if asset.camera_presets.exists %}
+<section class="panel">
+    <h3>PTZ Camera Presets</h3>
+
+    <p>
+        These presets are stored on the camera and recalled using the camera's physical remote control.
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Preset</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Last Verified</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for preset in asset.camera_presets.all %}
+                <tr>
+                    <td>{{ preset.preset_number }}</td>
+                    <td>{{ preset.name }}</td>
+                    <td>{{ preset.get_status_display }}</td>
+                    <td>{{ preset.last_verified|default:"Not verified" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endif %}
+
+<section class="panel">
+    <h3>Notes</h3>
+    {{ asset.notes|linebreaks }}
+</section>
+
+<a href="{% url 'inventory:asset_list' %}">
+    Back to Inventory
+</a>
+{% endblock %}

@@ -1,0 +1,43 @@
+# Python
+__pychache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+media/
+staticfiles/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+
+# Local build data
+data/*
+!data/.gitkeep
+
+# IDE
+.idea/
+.vscode/*.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated files
+generated/
