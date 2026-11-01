@@ -3,18 +3,52 @@
 {% block title %}Technology Inventory{% endblock %}
 
 {% block content %}
-<h2>Technology Inventory</h2>
+<div class="page-heading">
+    <div><p class="eyebrow">EQUIPMENT RECORDS</p><h1>Technology inventory</h1>
+    <p class="lede">Search and review the technology documented for your building.</p></div>
+    <a class="button" href="{% url 'inventory:asset_wizard_start' %}">Add equipment <span aria-hidden="true">＋</span></a>
+</div>
 
-<form method="get" class="search-form">
-    <label for="q">Search inventory</label>
+{% if drafts %}
+<section class="panel saved-drafts">
+    <div class="section-heading"><div><p class="eyebrow">IN PROGRESS</p><h2>Saved drafts</h2></div></div>
+    <div class="draft-list">
+        {% for draft in drafts %}
+        <div class="draft-row">
+            <div><strong>{{ draft.name }}</strong><span>{% if draft.inventory_number %}{{ draft.inventory_number }} · {% endif %}{{ draft.step_name }}</span></div>
+            {% if draft.current_step == 6 %}
+                <a class="button button-small" href="{% url 'inventory:asset_wizard_review' draft.wizard_id %}">Resume review</a>
+            {% else %}
+                <a class="button button-small" href="{% url 'inventory:asset_wizard_step' draft.wizard_id draft.current_step %}">Resume</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
 
-    <input type="search" id="q" name="q" value="{{ search }}" placeholder="Asset name or inventory number">
-
-    <button type="submit">Search</button>
+<form method="get" class="panel filter-panel">
+    <div class="filter-grid">
+        <div class="field search-field"><label for="q">Search</label>
+            <input type="search" id="q" name="q" value="{{ search }}" placeholder="Name or inventory number">
+        </div>
+        <div class="field"><label for="category">Category</label>
+            <select id="category" name="category"><option value="">All categories</option>
+            {% for value, label in categories %}<option value="{{ value }}" {% if category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        </div>
+        <div class="field"><label for="ownership">Ownership</label>
+            <select id="ownership" name="ownership"><option value="">All ownership</option>
+            {% for value, label in ownership_choices %}<option value="{{ value }}" {% if ownership == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        </div>
+        <div class="filter-actions"><button class="button" type="submit">Apply filters</button>
+            {% if search or category or ownership %}<a class="reset-link" href="{% url 'inventory:asset_list' %}">Clear</a>{% endif %}</div>
+    </div>
 </form>
 
-<div class="table-container">
+<div class="inventory-list-heading"><div><p class="eyebrow">BUILDING RECORDS</p><h2>Equipment inventory</h2><p>Search, filter, and open a record to review its details.</p></div><div class="list-summary"><strong>{{ result_count }}</strong><span>asset{{ result_count|pluralize }} found</span></div></div>
+<div class="table-container panel table-panel">
     <table>
+        <caption class="sr-only">Equipment records matching the selected search and filters</caption>
         <thead>
             <tr>
                 <th>Inventory Number</th>
@@ -30,20 +64,20 @@
             {% for asset in assets %}
                 <tr>
                     <td>
-                        <a href="{% url 'inventory:asset_detail' asset.pk %}">
+                        <a class="record-link" href="{% url 'inventory:asset_detail' asset.pk %}">
                             {{ asset.inventory_number }}
                         </a>
                     </td>
 
                     <td>{{ asset.name }}</td>
                     <td>{{ asset.get_category_display }}</td>
-                    <td>{{ asset.get_ownership_display }}</td>
-                    <td>{{ asset.get_condition_display }}</td>
+                    <td><span class="status-pill {% if asset.ownership == 'unknown' %}status-review{% endif %}">{{ asset.get_ownership_display }}</span></td>
+                    <td><span class="status-pill status-{{ asset.condition }}">{{ asset.get_condition_display }}</span></td>
                     <td>{{ asset.room|default:"Not assigned" }}</td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="6">No asset found.</td>
+                    <td colspan="6" class="empty-state"><strong>No matching equipment</strong><span>Try a different search or clear the selected filters.</span></td>
                 </tr>
             {% endfor %}
         </tbody>

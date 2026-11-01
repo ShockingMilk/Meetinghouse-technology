@@ -3,7 +3,12 @@
 {% block title %}{{ asset.name }}{% endblock %}
 
 {% block content %}
-<h2>{{ asset.name }}</h2>
+<div class="breadcrumbs"><a href="{% url 'inventory:asset_list' %}">Inventory</a><span aria-hidden="true">/</span><span>{{ asset.inventory_number }}</span></div>
+<div class="page-heading detail-heading">
+    <div><p class="eyebrow">{{ asset.inventory_number }} · {{ asset.get_category_display }}</p><h1>{{ asset.name }}</h1>
+    <p class="lede">{{ asset.manufacturer|default:"Manufacturer not recorded" }}{% if asset.model_number %} · {{ asset.model_number }}{% endif %}</p></div>
+    <span class="status-pill status-{{ asset.status }}">{{ asset.get_status_display }}</span>
+</div>
 
 <section class="panel">
     <h3>Asset Information</h3>
@@ -29,9 +34,6 @@
 
         <dt>Condition</dt>
         <dd>{{ asset.get_condition_display }}</dd>
-
-        <dt>Status</dt>
-        <dd>{{ asset.get_status_display }}</dd>
 
         <dt>Room</dt>
         <dd>{{ asset.room|default:"Not assigned" }}</dd>
@@ -102,7 +104,7 @@
             {% empty %}
                 <tr>
                     <td colspan="4">No software records.</td>
-                </td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>
@@ -145,7 +147,8 @@
     {{ asset.notes|linebreaks }}
 </section>
 
-<a href="{% url 'inventory:asset_list' %}">
-    Back to Inventory
-</a>
+<div class="detail-actions">
+    <a class="back-link" href="{% url 'inventory:asset_list' %}">← Back to inventory</a>
+    <a class="button" href="{% url 'inventory:asset_wizard_edit' asset.pk %}">Edit equipment</a>
+</div>
 {% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Review equipment{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'inventory:asset_list' %}">Inventory</a><span aria-hidden="true">/</span><span>Review equipment</span></div>
+<div class="wizard-heading">
+    <div><p class="eyebrow">{% if is_edit %}EDIT EQUIPMENT{% else %}NEW EQUIPMENT{% endif %} · STEP 6 OF 6</p>
+    <h1>Review and save</h1>
+    <p class="lede">Check the record below. Nothing is written to the inventory until you save it.</p></div>
+</div>
+<ol class="wizard-progress" aria-label="Equipment entry progress">
+    {% for number, name in step_names.items %}<li class="is-complete"><span class="progress-number">✓</span><span class="progress-name">{{ name }}</span></li>{% endfor %}
+</ol>
+
+<section class="panel review-panel">
+    <div class="review-title"><div><p class="eyebrow">EQUIPMENT IDENTITY</p><h2>{{ asset.name }}</h2></div><div class="review-title-actions"><span class="status-pill status-{{ asset.status }}">{{ asset.get_status_display }}</span><a class="edit-link" href="{% url 'inventory:asset_wizard_step' wizard_id 3 %}">Edit details</a></div></div>
+    <dl class="details-grid">
+        <dt>Inventory number</dt><dd>{{ asset.inventory_number }}</dd>
+        <dt>Category</dt><dd>{{ asset.get_category_display }}</dd>
+        <dt>Manufacturer</dt><dd>{{ asset.manufacturer|default:"Not recorded" }}</dd>
+        <dt>Model</dt><dd>{{ asset.model_number|default:"Not recorded" }}</dd>
+        <dt>Serial number</dt><dd>{{ asset.serial_number|default:"Not recorded" }}</dd>
+        <dt>Physical location</dt><dd>{{ asset.physical_location|default:"Not recorded" }}</dd>
+    </dl>
+</section>
+
+<section class="panel review-panel">
+    <div class="review-title"><div><p class="eyebrow">PLACEMENT</p><h2>Room</h2></div><a class="edit-link" href="{% url 'inventory:asset_wizard_step' wizard_id 1 %}">Change room</a></div>
+    <p class="review-room">{{ room|default:"Not assigned yet" }}</p>
+</section>
+
+<section class="panel review-panel">
+    <div class="review-title"><div><p class="eyebrow">ACCOUNTABILITY</p><h2>Ownership and condition</h2></div><a class="edit-link" href="{% url 'inventory:asset_wizard_step' wizard_id 5 %}">Edit</a></div>
+    <dl class="details-grid">
+        <dt>Ownership</dt><dd>{{ asset.get_ownership_display }}</dd>
+        <dt>Condition</dt><dd>{{ asset.get_condition_display }}</dd>
+        <dt>Status</dt><dd>{{ asset.get_status_display }}</dd>
+        <dt>Responsible party</dt><dd>{{ asset.responsible_party|default:"Not recorded" }}</dd>
+    </dl>
+</section>
+
+<section class="panel review-panel">
+    <div class="review-title"><div><p class="eyebrow">LIFECYCLE &amp; NOTES</p><h2>Technical details</h2></div><a class="edit-link" href="{% url 'inventory:asset_wizard_step' wizard_id 4 %}">Edit details</a></div>
+    <dl class="details-grid">
+        <dt>Installed</dt><dd>{{ asset.installation_date|default:"Not recorded" }}</dd>
+        <dt>Warranty ends</dt><dd>{{ asset.warranty_end_date|default:"Not recorded" }}</dd>
+        <dt>End of life</dt><dd>{{ asset.end_of_life_date|default:"Not recorded" }}</dd>
+        <dt>Security support ends</dt><dd>{{ asset.security_support_end_date|default:"Not recorded" }}</dd>
+        <dt>Last tested</dt><dd>{{ asset.last_tested|default:"Not recorded" }}</dd>
+        <dt>Documentation</dt><dd>{% if asset.documentation_url %}<a href="{{ asset.documentation_url }}">Open documentation</a>{% else %}Not recorded{% endif %}</dd>
+        <dt>Funding route</dt><dd>{{ asset.funding_route|default:"Not recorded" }}</dd>
+        <dt>Approval status</dt><dd>{{ asset.approval_status|default:"Not recorded" }}</dd>
+        <dt>Replacement estimate</dt><dd>{% if asset.replacement_estimate %}${{ asset.replacement_estimate }}{% else %}Not recorded{% endif %}</dd>
+        <dt>Recommended action</dt><dd>{{ asset.recommended_action|default:"Not recorded"|linebreaksbr }}</dd>
+        <dt>Specification</dt><dd>{{ asset.specification|default:"Not recorded"|linebreaksbr }}</dd>
+        <dt>Dependencies</dt><dd>{{ asset.dependencies|default:"Not recorded"|linebreaksbr }}</dd>
+        <dt>Notes</dt><dd>{{ asset.notes|default:"Not recorded"|linebreaksbr }}</dd>
+    </dl>
+</section>
+
+<div class="wizard-actions review-actions">
+    <form method="post" class="inline-action-form">{% csrf_token %}<button class="button button-secondary" name="action" value="previous">Back to responsibility</button></form>
+    <form method="post" class="inline-action-form">{% csrf_token %}<button class="button" name="action" value="save">{% if is_edit %}Save equipment changes{% else %}Confirm and save equipment{% endif %}</button></form>
+</div>
+<form class="cancel-draft-form" method="post" action="{% url 'inventory:asset_wizard_cancel' wizard_id %}">{% csrf_token %}<button class="text-button" type="submit">Discard this equipment draft</button></form>
+{% endblock %}

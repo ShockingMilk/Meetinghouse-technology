@@ -1,5 +1,5 @@
 from .assessment import AssessmentStatus, BuildingAssessment, FundingArrangement, PrintingType, VideoSetup
-from .assets import Asset, AssetCategory, AssetCondition, AssetOwnership
+from .assets import Asset, AssetCategory, AssetCondition, AssetOwnership, AssetStatus
 from .camera_preset import CameraPreset, CameraPresetStatus
 from .connection import AssetConnection, CompatibilityStatus, ConnectionMedium, ConnectionType
 from .maintenance import MaintenanceRecord
@@ -14,6 +14,7 @@ __all__ = [
     'AssetCondition',
     'AssetConnection',
     'AssetOwnership',
+    'AssetStatus',
     'BuildingAssessment',
     'CameraPreset',
     'CameraPresetStatus',

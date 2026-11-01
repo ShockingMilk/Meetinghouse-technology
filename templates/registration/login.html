@@ -3,15 +3,17 @@
 {% block title %}Log In{% endblock %}
 
 {% block content %}
-<section class="panel narrow">
-    <h2>Management Login</h2>
+<section class="panel narrow login-panel">
+    <p class="eyebrow">AUTHORIZED ACCESS</p>
+    <h1>Management sign in</h1>
+    <p class="lede">Sign in to manage equipment records and building technology details.</p>
 
-    <form method="post">
+    <form method="post" class="auth-form">
         {% csrf_token %}
 
         {{ form.as_p }}
 
-        <button type="submit">Log In</button>
+        <button class="button" type="submit">Sign in</button>
 
         {% if next %}
             <input type="hidden" name="next" value="{{ next }}">
