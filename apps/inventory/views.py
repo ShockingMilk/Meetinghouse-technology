@@ -2,7 +2,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 
-from .models import Asset
+from .models import Asset, AssetCategory, AssetOwnership
 
 @login_required
 def asset_list(request):
@@ -22,12 +22,35 @@ def asset_list(request):
     if search:
         assets = assets.filter(name__icontains=search) | assets.filter(inventory_number__icontains=search)
 
+    drafts = []
+    for wizard_id, draft in request.session.get('inventory_wizard_drafts', {}).items():
+        drafts.append({
+            'wizard_id': wizard_id,
+            'name': draft.get('name') or 'New equipment',
+            'inventory_number': draft.get('inventory_number', ''),
+            'current_step': draft.get('current_step', 1),
+            'step_name': {
+                1: 'Room',
+                2: 'Category',
+                3: 'Equipment details',
+                4: 'Technical details',
+                5: 'Responsibility',
+                6: 'Review and save',
+            }.get(draft.get('current_step', 1), 'Room'),
+        })
+
     return render(
         request,
         'inventory/asset_list.html',
         {
             'assets': assets,
             'search': search,
+            'category': category or '',
+            'ownership': ownership or '',
+            'categories': AssetCategory.choices,
+            'ownership_choices': AssetOwnership.choices,
+            'result_count': assets.count(),
+            'drafts': drafts,
         },
     )
 

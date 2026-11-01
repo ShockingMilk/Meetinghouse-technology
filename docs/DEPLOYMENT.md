@@ -11,22 +11,23 @@ The development environment is not the production environment.
 The eventual management deployment host should be selected and
 approved before deployment.
 
-## Management security
+## Access profiles
 
-The management application is private.
+Management and training use separate production profiles.
 
-Do not expose it to the public Internet.
+### Management, inventory, and login
 
-Do not configure router port forwarding for the management site.
+The management production profile includes the dashboard, inventory, login, and Django administration. All management and inventory views require sign-in. Make the site available to authorized administrators from the public and private building networks, primarily using the private network.
 
-Use an approved network path and access controls.
+The management site must not be exposed to the public Internet. Do not configure Internet router port forwarding. Use approved network routing and access controls. `compose.production.yaml` binds the local reverse proxy to localhost by default; change `MANAGEMENT_BIND_ADDRESS` only to an approved host interface and put the required network controls in place.
 
-## Future training deployment
+### Training
 
-If training content is later made available publicly, deploy a
-separate training-only application.
+Training pages require no sign-in. They should be available from both building networks, primarily the public network. “Public network” means the building's public network, not the public Internet.
 
-Do not expose the management application as part of that deployment.
+Deploy training separately with `compose.training.yaml` and `config.settings.training`. This URL configuration registers only training routes and the template hides management, login, and administration navigation. Do not expose the full management deployment as a way to publish training. Bind the training service to the approved building network interface and enforce network access at the host firewall or network gateway.
+
+The training service uses a distinct secret, URL configuration, and no persistent management database volume. Keep it separate from the management deployment and its data.
 
 ## Backups
 

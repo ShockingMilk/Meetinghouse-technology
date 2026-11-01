@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}{{ step_name }} · {% if is_edit %}Edit equipment{% else %}Add equipment{% endif %}{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'inventory:asset_list' %}">Inventory</a><span aria-hidden="true">/</span><span>{% if is_edit %}Edit equipment{% else %}Add equipment{% endif %}</span></div>
+<div class="wizard-heading">
+    <div><p class="eyebrow">{% if is_edit %}EDIT EQUIPMENT{% else %}NEW EQUIPMENT{% endif %} · STEP {{ step }} OF 6</p>
+    <h1>{{ step_name }}</h1>
+    <p class="lede">Your changes stay in a draft until you review and save the equipment record.</p></div>
+</div>
+
+<ol class="wizard-progress" aria-label="Equipment entry progress">
+    {% for number, name in step_names.items %}
+    <li class="{% if number == step %}is-current{% elif number < step %}is-complete{% endif %}">
+        <span class="progress-number">{% if number < step %}✓{% else %}{{ number }}{% endif %}</span>
+        <span class="progress-name">{{ name }}</span>
+    </li>
+    {% endfor %}
+</ol>
+
+<div class="wizard-layout">
+<section class="panel wizard-panel">
+    {% if step == 1 %}
+        <p class="form-intro">Choose where the equipment is located. If the room is missing, add it here and it will be selected for this draft.</p>
+    {% elif step == 2 %}
+        <p class="form-intro">Choose the category that best describes this equipment.</p>
+    {% elif step == 3 %}
+        <p class="form-intro">Add the identifying details available on the equipment label.</p>
+    {% elif step == 4 %}
+        <p class="form-intro">These details help with lifecycle planning and troubleshooting. You can leave unknown items blank.</p>
+    {% elif step == 5 %}
+        <p class="form-intro">Record ownership and current condition. If ownership is uncertain, leave it as “Unknown — Verify Ownership.”</p>
+    {% endif %}
+
+    <form method="post" class="wizard-form">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="form-error-summary" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="form-grid step-fields step-fields-{{ step }}{% if step == 2 %} category-grid{% endif %}">
+            {% for field in form %}
+                <div class="form-field {% if field.errors %}has-error{% endif %}{% if step == 4 and field.field.widget.input_type == 'textarea' %} form-field-wide{% endif %}">
+                    {% if field.field.widget.input_type == 'radio' %}
+                        <fieldset><legend>{{ field.label }}{% if field.field.required %}<span class="required-mark">Required</span>{% endif %}</legend>{{ field }}</fieldset>
+                    {% else %}
+                        <div class="field-label-row">{{ field.label_tag }}{% if field.field.required %}<span class="required-mark">Required</span>{% endif %}</div>{{ field }}
+                    {% endif %}
+                    {% if field.help_text %}<span class="field-help">{{ field.help_text }}</span>{% endif %}
+                    {% if field.errors %}<div class="field-errors" role="alert">{{ field.errors }}</div>{% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="wizard-actions">
+            {% if step > 1 %}<button class="button button-secondary" type="submit" name="action" value="previous">Back</button>{% endif %}
+            <button class="button button-secondary" type="submit" name="action" value="save_draft">Save draft</button>
+            <button class="button" type="submit" name="action" value="next">{% if step == 5 %}Review equipment{% else %}Continue{% endif %}<span aria-hidden="true">→</span></button>
+        </div>
+    </form>
+
+    {% if step == 1 %}
+        <a class="quick-add-room" href="{% url 'inventory:room_quick_add' wizard_id %}"><span class="quick-add-icon" aria-hidden="true">＋</span><span><strong>Add a room</strong><small>Create a room and return here with it selected.</small></span><span class="quick-add-arrow" aria-hidden="true">→</span></a>
+    {% endif %}
+</section>
+
+<aside class="wizard-aside">
+    <section class="aside-card">
+        <span class="aside-icon" aria-hidden="true">✓</span>
+        <h2>Your progress is saved as a draft</h2>
+        <p>Continue saves each completed section. Use <strong>Save draft</strong> to pause with incomplete details.</p>
+        <p>The equipment record is added or changed only after you confirm it on the review page.</p>
+    </section>
+    <section class="aside-card aside-checklist">
+        <p class="eyebrow">GOOD TO KNOW</p>
+        <ul><li>Unknown details can be left blank.</li><li>Ownership can stay “Unknown” until verified.</li><li>You can edit this record later.</li></ul>
+    </section>
+</aside>
+</div>
+
+<form class="cancel-draft-form" method="post" action="{% url 'inventory:asset_wizard_cancel' wizard_id %}">
+    {% csrf_token %}<button class="text-button" type="submit">Discard this equipment draft</button>
+</form>
+{% endblock %}

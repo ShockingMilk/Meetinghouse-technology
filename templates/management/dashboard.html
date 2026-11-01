@@ -1,47 +1,51 @@
 {% extends "base.html" %}
 
-{% block title %}ManagementDashboard{% endblock %}
+{% block title %}Overview{% endblock %}
 
 {% block content %}
-<h2>Technology Management Dashboard</h2>
+<div class="page-heading">
+    <div><p class="eyebrow">MANAGEMENT</p><h1>Technology overview</h1>
+    <p class="lede">A quick view of the equipment documented for your building.</p></div>
+    <a class="button" href="{% url 'inventory:asset_list' %}">Browse inventory <span aria-hidden="true">→</span></a>
+</div>
 
 <div class="dashboard-grid">
-    <section class="panel">
-        <h3>Total Assets</h3>
+    <section class="panel metric-card">
+        <div class="metric-topline"><span class="metric-label">DOCUMENTED ASSETS</span><span class="metric-icon" aria-hidden="true">▣</span></div>
         <p class="metric">{{ asset_count }}</p>
-        <a href="{% url 'inventory:asset_list' %}">
-            View Inventory
-        </a>
+        <a href="{% url 'inventory:asset_list' %}">View inventory <span aria-hidden="true">→</span></a>
     </section>
 
-    <section class="panel">
-        <h3>Active Assets</h3>
+    <section class="panel metric-card">
+        <div class="metric-topline"><span class="metric-label">ACTIVE EQUIPMENT</span><span class="metric-icon" aria-hidden="true">✓</span></div>
         <p class="metric">{{ active_asset_count }}</p>
+        <p class="metric-footnote">Currently in service</p>
     </section>
 
-    <section class="panel">
-        <h3>Ownership to Verify</h3>
+    <section class="panel metric-card">
+        <div class="metric-topline"><span class="metric-label">OWNERSHIP TO VERIFY</span><span class="metric-icon attention" aria-hidden="true">!</span></div>
         <p class="metric">{{ unknown_ownership_count }}</p>
+        <p class="metric-footnote">Confirm ownership when known</p>
     </section>
 </div>
 
-<section class="panel">
-    <h3>Management Tools</h3>
+<section class="panel tools-panel">
+    <div class="section-heading"><div><p class="eyebrow">QUICK ACCESS</p><h2>Management tools</h2></div></div>
 
     <ul>
         <li>
             <a href="{% url 'inventory:asset_list' %}">
-                Building technology inventory
+                <strong>Building technology inventory</strong><span>Search equipment and review its recorded details.</span>
             </a>
         </li>
         <li>
             <a href="/admin/">
-                Administration
+                <strong>Administration</strong><span>Manage inventory records and supporting data.</span>
             </a>
         </li>
         <li>
             <a href="{% url 'training:index' %}">
-                Training and documentation
+                <strong>Training and documentation</strong><span>Find operating guides and reference material.</span>
             </a>
         </li>
     </ul>

@@ -15,7 +15,12 @@ RUN apt-get update \
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN mkdir -p /app/data /app/staticfiles
+COPY . /app
+
+RUN mkdir -p /app/data /app/staticfiles \
+    && DJANGO_SETTINGS_MODULE=config.settings.production \
+       DJANGO_SECRET_KEY=build-only-static-collection-key \
+       python manage.py collectstatic --noinput
 
 EXPOSE 8000
 

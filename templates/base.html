@@ -5,44 +5,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>{% block title %}Meetinghouse Technology{% endblock %}</title>
+    <title>{% block title %}Meetinghouse Technology{% endblock %} · Meetinghouse Technology</title>
 
     <link rel="stylesheet" href="{% static 'css/site.css' %}">
 </head>
 <body>
-    <header class="site-header">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    {% if not training_only and user.is_authenticated %}
+    <div class="app-shell">
+        <aside class="app-sidebar" aria-label="Management navigation">
+            <a class="brand" href="{% url 'management:dashboard' %}">
+                <span class="brand-mark" aria-hidden="true">MT</span>
+                <span><strong>Meetinghouse</strong><small>Technology workspace</small></span>
+            </a>
+            <p class="sidebar-label">WORKSPACE</p>
+            <nav class="sidebar-nav" aria-label="Main navigation">
+                <a href="{% url 'management:dashboard' %}" {% if request.resolver_match.namespace == 'management' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▦</span>Overview</a>
+                <a href="{% url 'inventory:asset_list' %}" {% if request.resolver_match.namespace == 'inventory' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▤</span>Inventory</a>
+                <a href="{% url 'training:index' %}" {% if request.resolver_match.namespace == 'training' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▱</span>Training guides<span class="nav-external" aria-label="Available without sign-in">↗</span></a>
+            </nav>
+            <div class="sidebar-bottom">
+                <div class="sidebar-account"><span class="avatar" aria-hidden="true">{{ user.get_short_name|default:user.username|slice:":1"|upper }}</span><span><strong>{{ user.get_short_name|default:user.username }}</strong><small>Management access</small></span></div>
+                <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="sidebar-signout" type="submit">Sign out <span aria-hidden="true">↗</span></button></form>
+            </div>
+        </aside>
+        <div class="app-main">
+            <header class="workspace-header">
+                <div><span class="workspace-kicker">MEETINGHOUSE TECHNOLOGY</span><strong>{% if request.resolver_match.namespace == 'inventory' %}Inventory workspace{% elif request.resolver_match.namespace == 'training' %}Training and reference{% else %}Management workspace{% endif %}</strong></div>
+                <span class="access-badge"><span class="account-dot" aria-hidden="true"></span>Authorized access</span>
+            </header>
+            <main id="main-content">
+    {% else %}
+    <header class="site-header public-header">
         <div class="container">
-            <h1>Meetinghouse Technology</h1>
-
-            <nav>
-                <a href="{% url 'management:dashboard' %}">
-                    Management
-                </a>
-
-                <a href="{% url 'inventory:asset_list' %}">
-                    Inventory
-                </a>
-
-                <a href="{% url 'training:index' %}">
-                    Training
-                </a>
-
-                {% if user.is_authenticated %}
-                    <form method="post" action="{% url 'logout' %}">
-                        {% csrf_token %}
-                        <button type="submit">Log Out</button>
-                    </form>
-                {% else %}
-                    <a href="{% url 'login' %}">Log In</a>
-                {% endif %}
+            <a class="brand" href="{% if training_only %}{% url 'training:index' %}{% else %}{% url 'training:index' %}{% endif %}">
+                <span class="brand-mark" aria-hidden="true">MT</span>
+                <span><strong>Meetinghouse</strong><small>Technology training</small></span>
+            </a>
+            <nav aria-label="Main navigation">
+                <a href="{% url 'training:index' %}" {% if request.resolver_match.namespace == 'training' %}aria-current="page"{% endif %}>Training guides</a>
+                {% if not training_only %}<a href="{% url 'login' %}">Management sign in</a>{% endif %}
             </nav>
         </div>
     </header>
-
-    <main class="container">
+    <main class="container public-main" id="main-content">
+    {% endif %}
         {% if messages %}
             {% for message in messages %}
-                <div class="message">
+                <div class="message {{ message.tags }}" role="status">
                     {{ message }}
                 </div>
             {% endfor %}
@@ -52,15 +62,17 @@
         {% endblock %}
     </main>
 
-    <footer class="site-footer">
-        <div class="container">
-            <p>
-                Meetinghouse Technology Management and Training
-            </p>
-            <p>
-                Internal documentation. Follow applicable Church technology policies and approval processes.
-            </p>
+    <footer class="site-footer {% if not training_only and user.is_authenticated %}app-footer{% endif %}">
+        <div class="container footer-inner">
+            {% if training_only %}
+                <p>Meetinghouse Technology <span>·</span> Training and reference</p>
+                <p>Operating instructions for meetinghouse technology.</p>
+            {% else %}
+                <p>Meetinghouse Technology <span>·</span> Management and training</p>
+                <p>Internal tool. Follow applicable Church technology policies and approval processes.</p>
+            {% endif %}
         </div>
     </footer>
+    {% if not training_only and user.is_authenticated %}</div></div>{% endif %}
 </body>
 </html>

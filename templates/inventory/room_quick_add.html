@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Add a room{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'inventory:asset_list' %}">Inventory</a><span aria-hidden="true">/</span><a href="{% url 'inventory:asset_wizard_step' wizard_id 1 %}">Equipment draft</a><span aria-hidden="true">/</span><span>Add a room</span></div>
+<div class="page-heading"><div><p class="eyebrow">ROOM QUICK-ADD</p><h1>Add a room</h1><p class="lede">The room will be saved now and selected for this equipment draft.</p></div></div>
+<section class="panel wizard-panel">
+    <form method="post" class="wizard-form">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="form-error-summary" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="form-grid">
+            {% for field in form %}
+                <div class="form-field {% if field.errors %}has-error{% endif %}{% if field.field.widget.input_type == 'textarea' %} form-field-wide{% endif %}">
+                    <div class="field-label-row">{{ field.label_tag }}{% if field.field.required %}<span class="required-mark">Required</span>{% endif %}</div>{{ field }}
+                    {% if field.help_text %}<span class="field-help">{{ field.help_text }}</span>{% endif %}
+                    {% if field.errors %}<div class="field-errors" role="alert">{{ field.errors }}</div>{% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="wizard-actions">
+            <a class="button button-secondary" href="{% url 'inventory:asset_wizard_step' wizard_id 1 %}">Cancel</a>
+            <button class="button" type="submit">Save and select room</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,22 @@
+services:
+  training:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    command: >
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:8000
+      --workers 2
+      --timeout 60
+
+    env_file:
+      - ${TRAINING_ENV_FILE:-.env.training}
+
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.training
+
+    ports:
+      - "${TRAINING_BIND_ADDRESS:-127.0.0.1}:${TRAINING_PORT:-8081}:8000"
+
+    restart: unless-stopped
