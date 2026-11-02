@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import guided_views, views
+from . import guided_views, maintenance_views, relationship_views, views
 
 app_name = 'inventory'
 
@@ -20,6 +20,23 @@ urlpatterns = [
     path('new/', guided_views.start_asset_creation, name='asset_wizard_start'),
     path('labels/print/', views.asset_labels, name='asset_labels'),
     path('<int:pk>/label/', views.asset_label, name='asset_label'),
+    path('maintenance/', maintenance_views.dashboard, name='maintenance_dashboard'),
+    path('maintenance/follow-ups/', maintenance_views.dashboard, name='maintenance_followups'),
+    path('maintenance/reports/', maintenance_views.reports, name='maintenance_reports'),
+    path('maintenance/schedules/new/', maintenance_views.schedule_create, name='maintenance_schedule_create'),
+    path('maintenance/schedules/new/<int:asset_pk>/', maintenance_views.schedule_create, name='maintenance_schedule_create_for_asset'),
+    path('maintenance/schedules/<int:pk>/edit/', maintenance_views.schedule_edit, name='maintenance_schedule_edit'),
+    path('maintenance/records/new/', maintenance_views.maintenance_record_create, name='maintenance_record_create'),
+    path('<int:asset_pk>/maintenance/new/', maintenance_views.maintenance_record_create, name='maintenance_record_create_for_asset'),
+    path('maintenance/records/<int:pk>/edit/', maintenance_views.maintenance_record_edit, name='maintenance_record_edit'),
+    path('maintenance/records/<int:pk>/', maintenance_views.maintenance_record_detail, name='maintenance_record_detail'),
+    path('relationships/', relationship_views.relationship_index, name='relationship_index'),
+    path('relationships/new/', relationship_views.relationship_form, {'kind': 'connection'}, name='relationship_create'),
+    path('relationships/<str:kind>/new/', relationship_views.relationship_form, name='relationship_create'),
+    path('relationships/<str:kind>/new/asset/<int:asset_pk>/', relationship_views.relationship_form, name='relationship_create_for_asset'),
+    path('relationships/<str:kind>/<int:pk>/edit/', relationship_views.relationship_form, name='relationship_edit'),
+    path('assets/<int:asset_pk>/replacement-review/', relationship_views.replacement_review, name='replacement_review'),
+    path('assets/<int:asset_pk>/replacement-review/edit/', relationship_views.relationship_form, {'kind': 'review'}, name='replacement_review_edit'),
     path(
         'drafts/<uuid:wizard_id>/step/<int:step>/',
         guided_views.asset_wizard_step,

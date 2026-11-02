@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance record · {{ record.asset.inventory_number }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'inventory:maintenance_dashboard' %}">Maintenance</a><span aria-hidden="true">/</span><a href="{% url 'inventory:asset_detail' record.asset_id %}">{{ record.asset.inventory_number }}</a><span aria-hidden="true">/</span><span>Record</span></div>
+<div class="page-heading detail-heading"><div><p class="eyebrow">{{ record.get_maintenance_type_display }} · {{ record.performed_at|date:"M j, Y" }}</p><h1>{{ record.asset.name }}</h1><p class="lede">{{ record.asset.inventory_number }}{% if record.asset.room %} · {{ record.asset.room.name }}{% else %} · Unassigned{% endif %}</p></div><span class="status-pill {% if follow_up_state == 'overdue' %}status-review{% endif %}">{{ record.get_result_display }}</span></div>
+
+<section class="panel maintenance-detail-panel"><div class="section-heading"><div><p class="eyebrow">ACTIVITY</p><h2>What happened</h2></div><a class="button button-secondary button-small" href="{% url 'inventory:maintenance_record_edit' record.pk %}">Edit record</a></div>
+    <dl class="details-grid"><dt>Date performed</dt><dd>{{ record.performed_at|date:"M j, Y, g:i a" }}</dd><dt>Recorded by</dt><dd>{{ record.performed_by }}</dd><dt>Activity</dt><dd>{{ record.get_maintenance_type_display }}</dd><dt>Result</dt><dd>{{ record.get_result_display }}</dd><dt>Description</dt><dd>{{ record.description|linebreaksbr }}</dd><dt>Action taken</dt><dd>{{ record.action_taken|default:"Not recorded"|linebreaksbr }}</dd><dt>Parts / materials</dt><dd>{{ record.materials_used|default:"Not recorded"|linebreaksbr }}</dd><dt>Estimated cost</dt><dd>{{ record.estimated_cost|default:"Not recorded" }}</dd><dt>Actual cost</dt><dd>{{ record.actual_cost|default:"Not recorded" }}</dd>{% if record.schedule %}<dt>Inspection schedule</dt><dd><a href="{% url 'inventory:maintenance_schedule_edit' record.schedule_id %}">{{ record.schedule.name }}</a></dd>{% endif %}</dl>
+</section>
+
+{% if record.follow_up_required %}<section class="panel maintenance-detail-panel"><div class="section-heading"><div><p class="eyebrow">FOLLOW-UP</p><h2>{{ follow_up_state|title }}</h2></div>{% if record.resolved_at %}<span class="status-pill status-active">Resolved {{ record.resolved_at|date:"M j, Y" }}</span>{% endif %}</div>
+    <p>{{ record.follow_up_notes|linebreaksbr }}</p>{% if record.follow_up_date %}<p><strong>Due:</strong> {{ record.follow_up_date|date:"M j, Y" }}</p>{% endif %}
+    {% if record.resolved_at %}<div class="resolution-callout"><strong>Resolution</strong><p>{{ record.resolution_notes|linebreaksbr }}</p><form method="post">{% csrf_token %}<button class="text-button" type="submit" name="action" value="reopen">Reopen follow-up</button></form></div>{% else %}<form method="post" class="resolution-form">{% csrf_token %}<input type="hidden" name="action" value="resolve"><h3>Resolve follow-up</h3>{% for field in resolution_form %}<div class="form-field">{{ field.label_tag }}{{ field }}{% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}</div>{% endfor %}<button class="button" type="submit">Mark resolved</button></form>{% endif %}
+</section>{% endif %}
+<div class="detail-actions"><a class="back-link" href="{% url 'inventory:maintenance_dashboard' %}">← Maintenance overview</a><a class="button button-secondary" href="{% url 'inventory:asset_detail' record.asset_id %}">Equipment record</a></div>
+{% endblock %}

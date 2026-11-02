@@ -35,18 +35,17 @@ The public Wi-Fi is Church-managed and may use a captive portal or client isolat
 
 **Status: Implemented; validation and user review remain**
 
-The wizard is the main guided path for adding and editing equipment. It uses existing `Asset` and `Room` models, leaves Django Admin available, and does not add migrations.
+The wizard is the main guided path for adding and editing equipment. It uses existing `Asset` and `Room` models, leaves Django Admin available, and stores resumable drafts in the database.
 
 1. **Room** — choose an existing room or leave it unassigned; add a missing room without leaving the wizard.
 2. **Category** — choose from the existing asset categories.
-3. **Equipment details** — inventory number, name, manufacturer, model, serial number, and physical location.
-4. **Technical details** — lifecycle dates, documentation link, funding and approval notes, estimate, specification, dependencies, recommended action, and notes.
-5. **Responsibility** — ownership, condition, status, and responsible party.
-6. **Review and save** — validate the full record and ask for a final confirmation before writing the equipment record.
+3. **Equipment details** — inventory number, name, manufacturer, model, serial number, lifecycle and responsibility information, and category-specific notes.
+4. **Connections** — optionally link existing equipment records.
+5. **Review and save** — validate the full record and ask for a final confirmation before writing the equipment record.
 
 Draft behavior:
 
-- Store drafts in the signed-in user's Django session so a partially entered equipment record is not added to inventory.
+- Store drafts in a user-owned database record so a partially entered equipment record is not added to inventory.
 - Allow incomplete fields to be saved and resumed from the inventory page.
 - Preserve entered values when navigating backward.
 - Keep a new room if the equipment draft is later discarded; room quick-add is a separate, immediate save.
@@ -70,28 +69,54 @@ Before calling this milestone complete, run the wizard tests and manually review
 
 The assessment form captures overall, audio, video, network, printing, assistive-listening, and power status, observations, assessor, date, general notes, and follow-up. `Room.priority` remains the current room priority; the historical assessment does not rewrite room or asset data.
 
-## Milestone 4 — Supporting inventory forms
+## Phase 2.4 — Maintenance and equipment lifecycle management
 
-**Status: Planned**
+**Status: Implemented; run the generated inventory migration and full regression suite**
 
-Build guided forms for the related models that currently have admin-only editing:
+- Maintain dated service history with activity type, result, action, costs, and follow-up resolution.
+- Support explicit recurring inspection schedules linked to completed maintenance records.
+- Calculate due dates, follow-up states, and lifecycle warning windows when pages load; no task scheduler or notification infrastructure is used.
+- Integrate maintenance summaries into asset and room detail pages and the authenticated management dashboard.
+- Provide lifecycle review, replacement planning, and filtered CSV reporting with formula-injection protection.
+- Preserve FMG authorization boundaries and never infer that a missing date is expired.
 
-- Physical connections between assets, with compatibility left unverified until tested.
-- Maintenance, testing, and repair history.
+## Milestone 5 — Supporting inventory relationships
+
+**Status: Implemented in Phase 2.5; migration generated, application and validation pending**
+
+Provide authenticated management workflows for inventory relationships:
+
+- Physical connections between assets, explicit dependencies, structured specifications, compatibility evidence, and replacement impact review.
 - Installed software and verification dates.
 - PTZ camera presets, clearly identified as values stored on the camera and recalled with its physical remote.
 - Broadcast workflow records that validate the existing direct-to-Zoom and OBS paths.
 - Building technology assessments.
 
-Use existing models and admin screens as the source of truth. Add migrations only when a real data requirement cannot be represented by current fields.
+Connections, dependencies, specifications, compatibility evidence, and replacement
+reviews now have management views and asset/room integration. Installed software
+and broadcast workflows remain the source of truth for software/workflow records.
+Apply the generated inventory migration, then run system checks and the full test
+suite before treating this milestone as validated.
 
-## Milestone 5 — Training content
+## Phase 2.6 — Building technology dashboard and reporting
+
+**Status: Implemented; Django checks and regression suite pending**
+
+The authenticated overview now calculates inventory, room coverage, maintenance,
+lifecycle, compatibility, attention priority, and recent activity summaries from
+existing records. The management report area provides validated filters,
+pagination, CSV export, and browser print layouts for inventory, rooms,
+maintenance, lifecycle, compatibility, and ownership. The training-only URL
+configuration remains limited to training pages. Validate the generated
+Phase 2.5 migration and the full test suite in the project containers.
+
+## Milestone 6 — Training content
 
 **Status: Planned**
 
 Replace the training landing-page placeholders with concise, task-based instructions for audio, video and Zoom, printing, and assistive listening. Training remains open without an application login. Exclude management records, credentials, member information, and sensitive network details.
 
-## Milestone 6 — Deployment and operations
+## Milestone 7 — Deployment and operations
 
 **Status: Planned**
 

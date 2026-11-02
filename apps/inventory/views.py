@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import RoomAssessmentForm
@@ -14,7 +15,17 @@ from .models import (
     AssetOwnership,
     Room,
     RoomAssessment,
+    MaintenanceRecord,
+    MaintenanceSchedule,
+    AssetConnection,
+    AssetDependency,
+    VideoWorkflow,
 )
+from django.db.models import Q
+from .services.lifecycle import lifecycle_warnings
+from .services.maintenance import follow_up_state, schedule_state
+from .services.relationships import relationship_impact, replacement_impact
+from .models import ReplacementCompatibilityReview
 
 @login_required
 def asset_list(request):
@@ -120,7 +131,15 @@ def room_detail(request, pk: int):
     '''Show room details, equipment, current assessment, and history.'''
     room = get_object_or_404(
         Room.objects.prefetch_related(
-            'assets',
+            Prefetch(
+                'assets',
+                queryset=Asset.objects.select_related('room').prefetch_related(
+                    Prefetch('maintenance_records', queryset=MaintenanceRecord.objects.order_by('-performed_at', '-created_at'), to_attr='maintenance_history'),
+                    Prefetch('maintenance_schedules', queryset=MaintenanceSchedule.objects.select_related('asset').prefetch_related(
+                        Prefetch('completed_records', queryset=MaintenanceRecord.objects.order_by('-performed_at')),
+                    ), to_attr='enabled_schedules'),
+                ).order_by('inventory_number'),
+            ),
             Prefetch(
                 'assessments',
                 queryset=RoomAssessment.objects.order_by(
@@ -133,15 +152,32 @@ def room_detail(request, pk: int):
         pk=pk,
     )
     assessments = room.assessment_history
+    assets = list(room.assets.all())
+    room_connections = AssetConnection.objects.filter(Q(source__room=room) | Q(destination__room=room)).select_related('source', 'source__room', 'destination', 'destination__room').distinct()
+    room_dependencies = AssetDependency.objects.filter(Q(dependent_asset__room=room) | Q(required_asset__room=room) | Q(required_software__host_asset__room=room)).select_related('dependent_asset', 'dependent_asset__room', 'required_asset', 'required_asset__room', 'required_software', 'required_software__host_asset', 'required_software__host_asset__room').distinct()
+    training_guides = room.training_guides.filter(published_revision__isnull=False).exclude(status='archived').select_related('published_revision').order_by('published_revision__title')[:6]
+    for asset in assets:
+        asset.latest_maintenance = asset.maintenance_history[0] if asset.maintenance_history else None
+        for record in asset.maintenance_history:
+            record.follow_up_state = follow_up_state(record)
+        asset.open_followups = [record for record in asset.maintenance_history if record.follow_up_required and not record.resolved_at]
+        asset.schedule_items = []
+        for schedule in asset.enabled_schedules:
+            state = schedule_state(schedule)
+            asset.schedule_items.append({'schedule': schedule, **state})
+        asset.lifecycle_summary = lifecycle_warnings(asset)
 
     return render(
         request,
         'inventory/room_detail.html',
         {
             'room': room,
-            'assets': room.assets.all(),
+            'assets': assets,
             'assessments': assessments,
             'latest_assessment': assessments[0] if assessments else None,
+            'room_connections': room_connections,
+            'room_dependencies': room_dependencies,
+            'training_guides': training_guides,
         },
     )
 
@@ -175,17 +211,41 @@ def asset_detail(request, pk: int):
         Asset.objects.select_related('room').prefetch_related(
             'outgoing_connections__destination',
             'incoming_connections__source',
-            'maintenance_records',
+            Prefetch('maintenance_records', queryset=MaintenanceRecord.objects.order_by('-performed_at', '-created_at'), to_attr='maintenance_history'),
+            Prefetch('maintenance_schedules', queryset=MaintenanceSchedule.objects.prefetch_related(
+                Prefetch('completed_records', queryset=MaintenanceRecord.objects.order_by('-performed_at')),
+            ), to_attr='enabled_schedules'),
             'software_installations',
             'camera_presets',
         ),
         pk=pk,
     )
+    lifecycle = lifecycle_warnings(asset)
+    relationship_summary = relationship_impact(asset)
+    replacement_summary = replacement_impact(asset)
+    replacement_review_record = ReplacementCompatibilityReview.objects.filter(asset=asset).first()
+    workflows = VideoWorkflow.objects.filter(Q(computer=asset) | Q(camera=asset) | Q(transmitter=asset) | Q(receiver=asset)).select_related('computer', 'camera', 'transmitter', 'receiver', 'obs_software').distinct()
+    training_guides = asset.training_guides.filter(published_revision__isnull=False).exclude(status='archived').select_related('published_revision').order_by('published_revision__title')[:6]
+    for record in asset.maintenance_history:
+        record.follow_up_state = follow_up_state(record)
+    schedule_items = []
+    for schedule in asset.enabled_schedules:
+        state = schedule_state(schedule)
+        schedule_items.append({'schedule': schedule, **state})
     return render(
         request,
         'inventory/asset_detail.html',
         {
             'asset': asset,
+            'lifecycle': lifecycle,
+            'schedule_items': schedule_items,
+            'today': timezone.localdate(),
+            'lifecycle_warning_days': settings.LIFECYCLE_WARNING_DAYS,
+            'relationship_summary': relationship_summary,
+            'replacement_summary': replacement_summary,
+            'replacement_review_record': replacement_review_record,
+            'video_workflows': workflows,
+            'training_guides': training_guides,
         },
     )
 

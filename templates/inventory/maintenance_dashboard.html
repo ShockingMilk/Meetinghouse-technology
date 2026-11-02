@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Maintenance and lifecycle{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div><p class="eyebrow">EQUIPMENT CARE</p><h1>Maintenance &amp; lifecycle</h1><p class="lede">A current view of inspections, open issues, support dates, and replacement planning.</p></div>
+    <div class="page-actions"><a class="button button-secondary" href="{% url 'inventory:maintenance_reports' %}">Reports</a><a class="button" href="{% url 'inventory:maintenance_record_create' %}">Record maintenance <span aria-hidden="true">＋</span></a></div>
+</div>
+
+<div class="maintenance-metric-grid">
+    <a class="panel maintenance-metric" href="{% url 'inventory:maintenance_reports' %}?report=overdue"><span>Overdue inspections</span><strong>{{ overdue_schedules|length }}</strong></a>
+    <a class="panel maintenance-metric" href="{% url 'inventory:maintenance_reports' %}?report=overdue"><span>Inspections due soon</span><strong>{{ due_soon_schedules|length }}</strong></a>
+    <a class="panel maintenance-metric" href="{% url 'inventory:maintenance_reports' %}?report=followups"><span>Open follow-ups</span><strong>{{ open_followups|length }}</strong></a>
+    <a class="panel maintenance-metric" href="{% url 'inventory:maintenance_reports' %}?report=followups"><span>Overdue follow-ups</span><strong>{{ overdue_followups|length }}</strong></a>
+</div>
+
+<div class="maintenance-overview-grid">
+    <section class="panel maintenance-section">
+        <div class="section-heading"><div><p class="eyebrow">SCHEDULED WORK</p><h2>Inspections due</h2></div><a class="text-link" href="{% url 'inventory:maintenance_schedule_create' %}">Add schedule</a></div>
+        {% for item in schedule_items %}
+            <div class="maintenance-list-row"><div><a href="{% url 'inventory:asset_detail' item.schedule.asset_id %}"><strong>{{ item.schedule.asset.inventory_number }} · {{ item.schedule.asset.name }}</strong></a><span>{{ item.schedule.name }} · {{ item.schedule.get_activity_type_display }}{% if item.schedule.asset.room %} · {{ item.schedule.asset.room.name }}{% else %} · Unassigned{% endif %}</span></div><div class="maintenance-row-side"><span class="status-pill {% if item.state == 'overdue' %}status-review{% else %}status-active{% endif %}">{% if item.state == 'overdue' %}Overdue{% else %}Due soon{% endif %}</span><span>Due {{ item.due_date|date:"M j, Y" }}</span><a href="{% url 'inventory:maintenance_schedule_edit' item.schedule.pk %}">Manage</a><a href="{% url 'inventory:maintenance_record_create_for_asset' item.schedule.asset_id %}">Record</a></div></div>
+        {% empty %}<p class="empty-copy">No active inspections are due soon or overdue.</p>{% endfor %}
+    </section>
+
+    <section class="panel maintenance-section">
+        <div class="section-heading"><div><p class="eyebrow">ISSUE TRACKING</p><h2>Open follow-ups</h2></div><a class="text-link" href="{% url 'inventory:maintenance_reports' %}?report=followups">All follow-ups</a></div>
+        {% for record in open_followups %}
+            <div class="maintenance-list-row"><div><a href="{% url 'inventory:maintenance_record_detail' record.pk %}"><strong>{{ record.asset.inventory_number }} · {{ record.asset.name }}</strong></a><span>{{ record.follow_up_notes|truncatechars:110 }}</span></div><div class="maintenance-row-side"><span class="status-pill {% if record.follow_up_state == 'overdue' %}status-review{% endif %}">{{ record.follow_up_state|title }}</span><span>{% if record.follow_up_date %}Due {{ record.follow_up_date|date:"M j, Y" }}{% else %}No due date{% endif %}</span></div></div>
+        {% empty %}<p class="empty-copy">No unresolved maintenance follow-ups.</p>{% endfor %}
+    </section>
+</div>
+
+<section class="panel maintenance-section">
+    <div class="section-heading"><div><p class="eyebrow">LIFECYCLE REVIEW</p><h2>Dates and replacement planning</h2></div><a class="text-link" href="{% url 'inventory:maintenance_reports' %}?report=lifecycle">Lifecycle report</a></div>
+    <div class="lifecycle-summary-grid">
+        <div><span>Warranty nearing end</span><strong>{{ lifecycle_counts.warranty_approaching }}</strong></div><div><span>Warranty expired</span><strong>{{ lifecycle_counts.warranty_expired }}</strong></div>
+        <div><span>Security support nearing end</span><strong>{{ lifecycle_counts.security_approaching }}</strong></div><div><span>Security support expired</span><strong>{{ lifecycle_counts.security_expired }}</strong></div>
+        <div><span>End of life approaching</span><strong>{{ lifecycle_counts.end_of_life_approaching }}</strong></div><div><span>End of life passed</span><strong>{{ lifecycle_counts.end_of_life_passed }}</strong></div>
+        <div><span>Missing lifecycle details</span><strong>{{ missing_lifecycle_assets|length }}</strong></div><div><span>Replacement review</span><strong>{{ replacement_assets|length }}</strong></div>
+    </div>
+    <div class="maintenance-inline-links"><a href="{% url 'inventory:maintenance_reports' %}?report=lifecycle">Review lifecycle information →</a><a href="{% url 'inventory:maintenance_reports' %}?report=replacement">Replacement planning →</a><a href="{% url 'inventory:maintenance_reports' %}?report=history">Maintenance history →</a></div>
+</section>
+
+<p class="planning-note">Inspection intervals are local planning suggestions, not Church policy. Follow the equipment owner’s authorization requirements. Dashboard dates are calculated when this page loads; no background scheduler or notifications are used.</p>
+{% endblock %}

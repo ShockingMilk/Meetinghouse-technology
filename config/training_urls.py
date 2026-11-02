@@ -5,5 +5,5 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     path('', RedirectView.as_view(pattern_name='training:index', permanent=False)),
-    path('training/', include('apps.training.urls')),
+    path('training/', include('apps.training.public_urls')),
 ]

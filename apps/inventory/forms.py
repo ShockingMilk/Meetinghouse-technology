@@ -8,6 +8,7 @@ from .models import (
     AssetCondition,
     AssetOwnership,
     AssetStatus,
+    ReplacementRecommendation,
     AssetConnection,
     ConnectionType,
     ConnectionMedium,
@@ -113,6 +114,11 @@ class AssetTechnicalForm(forms.Form):
     recommended_action = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={'rows': 3}),
+    )
+    replacement_recommendation = forms.ChoiceField(
+        choices=(('', 'No recommendation recorded'), *ReplacementRecommendation.choices),
+        required=False,
+        help_text='A planning recommendation only. It does not approve a purchase or change the equipment status.',
     )
     specification = forms.CharField(
         required=False,

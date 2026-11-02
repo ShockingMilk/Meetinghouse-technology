@@ -31,6 +31,14 @@ Use the appropriate FMG process for FMG-owned equipment.
 Do not assume local funds can be used to purchase or replace
 FMG-owned equipment.
 
+Connection, specification, dependency, and compatibility records document
+observations and evidence only. They do not grant permission to alter or replace
+FMG-managed equipment or services. Keep ownership as unknown until verified.
+Compatibility conclusions should cite actual testing, manufacturer material, or
+other evidence and record limitations; an unverified connector or specification
+must remain unknown. Replacement review is planning only and does not approve a
+purchase or authorize work.
+
 ## Information protection
 
 Do not store:

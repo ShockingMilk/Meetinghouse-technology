@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{% if guide %}Edit guide{% else %}New guide{% endif %}{% endblock %}
+{% block content %}
+<nav class="breadcrumbs"><a href="{% url 'training:manage_guides' %}">Training guides</a><span>/</span><span>{% if guide %}{{ guide.title }}{% else %}New guide{% endif %}</span></nav>
+<div class="page-heading"><div><p class="eyebrow">GUIDE EDITOR</p><h1>{% if guide %}{{ guide.title }}{% else %}Create a training guide{% endif %}</h1><p class="lede">Write in Markdown. The preview is sanitized using the same renderer as the public page.</p></div></div>
+{% if guide %}<section class="panel guide-state-panel"><strong>Working state: {{ guide.get_status_display }}</strong><span>Last updated {{ guide.updated_at|date:"M j, Y g:i A" }}</span>{% if guide.has_publication %}<p>The last published revision stays public while you edit or review this working copy.</p>{% endif %}</section>{% endif %}
+<aside class="policy-reminder"><strong>Authorization reminder</strong><p>Physical access does not grant permission to change equipment. Follow FMG processes for FMG-owned equipment. Do not publish passwords, keys, private or member information, or unauthorized network changes. Refer uncertain or restricted work to the appropriate authorized support process.</p></aside>
+{% if not guide %}<section class="panel guide-starters"><label for="starter-template">Start from a guide outline</label><select id="starter-template"><option value="">Blank guide</option>{% for key, item in starter_templates.items %}<option value="{{ key }}">{{ item.0 }}</option>{% endfor %}</select></section>{% endif %}
+<section class="panel"><form method="post" id="guide-editor-form" class="guide-editor-form">{% csrf_token %}{{ form.non_field_errors }}<div class="editor-grid">{% for field in form %}<div class="field {% if field.name == 'content_markdown' %}editor-content-field{% endif %}">{{ field.label_tag }}{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}</div>{% endfor %}</div><div class="form-actions"><button class="button button-secondary" type="submit" name="action" value="preview">Preview</button><button class="button" type="submit" name="action" value="save">Save draft</button><a class="button button-secondary" href="{% url 'training:manage_guides' %}">Cancel</a></div></form></section>
+{% if preview_html != None %}<section class="panel markdown-preview"><div class="section-heading"><div><p class="eyebrow">PREVIEW</p><h2>Rendered guide</h2></div></div><div class="markdown-body">{{ preview_html }}</div></section>{% endif %}
+{% if guide %}<section class="panel guide-workflow-actions"><h2>Review and publication</h2><div class="form-actions">{% if guide.status != 'in_review' %}<form method="post" action="{% url 'training:manage_guide_submit_review' guide.pk %}">{% csrf_token %}<button class="button button-secondary" type="submit">Submit for review</button></form>{% endif %}{% if guide.status == 'in_review' %}<a class="button button-secondary" href="{% url 'training:manage_guide_review' guide.pk %}">Review guide</a>{% endif %}{% if perms.training.publish_trainingguide %}<a class="button" href="{% url 'training:manage_guide_publish' guide.pk %}">Publish…</a>{% endif %}<a class="button button-secondary" href="{% url 'training:manage_guide_revisions' guide.pk %}">Revision history</a>{% if perms.training.archive_trainingguide and guide.status != 'archived' %}<a class="button button-danger" href="{% url 'training:manage_guide_archive' guide.pk %}">Archive…</a>{% endif %}</div></section>{% endif %}
+<script>
+(() => {
+  const form = document.getElementById('guide-editor-form');
+  if (!form) return;
+  let dirty = false;
+  form.addEventListener('input', () => { dirty = true; });
+  form.addEventListener('change', () => { dirty = true; });
+  form.addEventListener('submit', () => { dirty = false; });
+  window.addEventListener('beforeunload', event => {
+    if (dirty) { event.preventDefault(); event.returnValue = ''; }
+  });
+  const starter = document.getElementById('starter-template');
+  if (starter) starter.addEventListener('change', () => {
+    if (starter.value) window.location.href = `?template=${encodeURIComponent(starter.value)}`;
+  });
+})();
+</script>
+{% endblock %}

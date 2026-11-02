@@ -53,6 +53,7 @@
         <dt>Approval status</dt><dd>{{ asset.approval_status|default:"Not recorded" }}</dd>
         <dt>Replacement estimate</dt><dd>{% if asset.replacement_estimate %}${{ asset.replacement_estimate }}{% else %}Not recorded{% endif %}</dd>
         <dt>Recommended action</dt><dd>{{ asset.recommended_action|default:"Not recorded"|linebreaksbr }}</dd>
+        <dt>Replacement planning</dt><dd>{{ asset.get_replacement_recommendation_display|default:"Not recorded" }}</dd>
         <dt>Specification</dt><dd>{{ asset.specification|default:"Not recorded"|linebreaksbr }}</dd>
         <dt>Dependencies</dt><dd>{{ asset.dependencies|default:"Not recorded"|linebreaksbr }}</dd>
         <dt>Notes</dt><dd>{{ asset.notes|default:"Not recorded"|linebreaksbr }}</dd>

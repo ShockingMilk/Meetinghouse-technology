@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Training categories{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">DOCUMENTATION MANAGEMENT</p><h1>Training categories</h1><p class="lede">Organize guides for readers. Deactivate categories to remove them from public browsing without deleting their guides.</p></div>{% if perms.training.add_trainingcategory %}<a class="button" href="{% url 'training:manage_category_create' %}">New category</a>{% endif %}</div>
+<nav class="training-manage-tabs"><a href="{% url 'training:manage_guides' %}">All guides</a><a href="?active=1">Active</a><a href="?active=0">Inactive</a></nav>
+<section class="panel"><div class="table-scroll"><table class="data-table"><thead><tr><th>Order</th><th>Category</th><th>Slug</th><th>Guides</th><th>State</th><th></th></tr></thead><tbody>{% for category in categories %}<tr><td>{{ category.display_order }}</td><td><strong>{{ category.name }}</strong><small>{{ category.description }}</small></td><td>{{ category.slug }}</td><td>{{ category.guide_count }}</td><td>{% if category.is_active %}Active{% else %}Inactive{% endif %}</td><td>{% if perms.training.change_trainingcategory %}<a href="{% url 'training:manage_category_edit' category.pk %}">Edit</a>{% endif %}</td></tr>{% empty %}<tr><td colspan="6">No categories have been created.</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

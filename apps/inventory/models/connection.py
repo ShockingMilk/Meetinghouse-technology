@@ -1,6 +1,7 @@
 """Physical connections between inventory assets"""
 
 from django.db import models
+from django.core.exceptions import ValidationError
 
 
 class ConnectionType(models.TextChoices):
@@ -87,10 +88,15 @@ class AssetConnection(models.Model):
     )
 
     notes = models.TextField(blank=True)
+    verification_notes = models.TextField(blank=True)
 
     class Meta:
         ordering = ["source__inventory_number", "destination__inventory_number"]
         constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(source=models.F("destination")),
+                name="asset_connection_not_self",
+            ),
             models.UniqueConstraint(
                 fields=[
                     "source",
@@ -101,6 +107,11 @@ class AssetConnection(models.Model):
                 name="unique_asset_connection",
             ),
         ]
+
+    def clean(self):
+        super().clean()
+        if self.source_id and self.source_id == self.destination_id:
+            raise ValidationError({'destination': 'An asset cannot connect to itself.'})
 
     def __str__(self) -> str:
         """Describe the connection"""

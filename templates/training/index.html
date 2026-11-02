@@ -1,42 +1,10 @@
 {% extends "base.html" %}
-
 {% block title %}Technology Training{% endblock %}
-
 {% block content %}
-<div class="page-heading">
-    <div><p class="eyebrow">TRAINING &amp; REFERENCE</p><h1>Meetinghouse technology guides</h1>
-    <p class="lede">Clear instructions for using the equipment and systems in your meetinghouse.</p></div>
-</div>
-
-<p class="access-note"><strong>No sign-in needed.</strong> Training instructions are open to everyone who needs them.</p>
-
-<div class="dashboard-grid">
-    <section class="panel">
-        <h3>Audio System</h3>
-        <p>
-            Instructions for using microphones, room audio, and the building sound system.
-        </p>
-    </section>
-
-    <section class="panel">
-        <h3>Video and Zoom</h3>
-        <p>
-            Instructions for operating the PTZ camera, selecting camera presets, and starting a broadcast.
-        </p>
-    </section>
-
-    <section class="panel">
-        <h3>Printing</h3>
-        <p>
-            Printer usage and troubleshooting.
-        </p>
-    </section>
-
-    <section class="panel">
-        <h3>Assistive Listening</h3>
-        <p>
-            Instructions for using assistive listening equipment.
-        </p>
-    </section>
-</div>
+<div class="page-heading"><div><p class="eyebrow">TRAINING &amp; REFERENCE</p><h1>Meetinghouse technology guides</h1><p class="lede">Clear steps for using the technology in your building. These published guides are available without a management sign-in.</p></div></div>
+<div class="access-note"><strong>No sign-in needed.</strong> Training instructions are open to everyone who needs them. Follow any authorization and escalation guidance in each procedure.</div>
+<form method="get" class="panel training-search"><label for="training-search">Search guides</label><div><input id="training-search" type="search" name="q" value="{{ search }}" placeholder="Search equipment, task, symptom, or keyword"><button class="button" type="submit">Search</button></div></form>
+{% if results %}<section class="panel"><div class="section-heading"><div><p class="eyebrow">SEARCH</p><h2>Results for “{{ search }}”</h2></div><span>{{ results.paginator.count }} guide{{ results.paginator.count|pluralize }}</span></div>{% if results.object_list %}<div class="training-guide-grid">{% for guide in results %}<article class="training-guide-card"><p class="eyebrow">{{ guide.published_revision.category_name }}</p><h3><a href="{% url 'training:guide_detail' guide.slug %}">{{ guide.published_revision.title }}</a></h3><p>{{ guide.published_revision.summary }}</p><span class="muted">Updated {{ guide.published_revision.published_at|date:"M j, Y" }}</span></article>{% endfor %}</div>{% else %}<p class="empty-state">No published guides match that search. Try a different word or browse a category.</p>{% endif %}</section>
+{% else %}<section class="panel"><div class="section-heading"><div><p class="eyebrow">BROWSE</p><h2>Guide categories</h2></div></div>{% if categories %}<div class="training-category-grid">{% for category in categories %}<a class="training-category-card" href="{% url 'training:category_detail' category.slug %}"><span class="metric-icon" aria-hidden="true">▤</span><strong>{{ category.name }}</strong><span>{{ category.description|default:"Browse practical guides in this area." }}</span><small>{{ category.public_guide_count }} guide{{ category.public_guide_count|pluralize }}</small></a>{% endfor %}</div>{% else %}<p class="empty-state">Published guides will appear here after Technology Specialists prepare and review the documentation.</p>{% endif %}</section>
+<section class="panel"><div class="section-heading"><div><p class="eyebrow">RECENTLY UPDATED</p><h2>Latest guides</h2></div></div>{% if recently_updated %}<div class="training-guide-grid">{% for guide in recently_updated %}<article class="training-guide-card"><p class="eyebrow">{{ guide.published_revision.category_name }}</p><h3><a href="{% url 'training:guide_detail' guide.slug %}">{{ guide.published_revision.title }}</a></h3><p>{{ guide.published_revision.summary }}</p><span class="muted">Published {{ guide.published_revision.published_at|date:"M j, Y" }}</span></article>{% endfor %}</div>{% else %}<p class="empty-state">No guides have been published yet.</p>{% endif %}</section>{% endif %}
 {% endblock %}

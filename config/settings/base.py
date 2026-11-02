@@ -12,6 +12,16 @@ SECRET_KEY = os.environ.get(
 
 BRAND_LOGO_URL = os.environ.get('BRAND_LOGO_URL') or '/static/branding/site-logo.png'
 ASSET_LABEL_SITE_HEADING = os.environ.get('ASSET_LABEL_SITE_HEADING', 'MEETINGHOUSE TECH').strip()
+LIFECYCLE_WARNING_DAYS = int(os.environ.get('LIFECYCLE_WARNING_DAYS', '180'))
+MAINTENANCE_DUE_SOON_DAYS = int(os.environ.get('MAINTENANCE_DUE_SOON_DAYS', '30'))
+MAINTENANCE_CATEGORY_INTERVALS_MONTHS = {
+    'audio': int(os.environ.get('MAINTENANCE_INTERVAL_AUDIO_MONTHS', '6')),
+    'assistive_listening': int(os.environ.get('MAINTENANCE_INTERVAL_ASSISTIVE_MONTHS', '3')),
+    'video': int(os.environ.get('MAINTENANCE_INTERVAL_VIDEO_MONTHS', '3')),
+    'printer': int(os.environ.get('MAINTENANCE_INTERVAL_PRINTER_MONTHS', '3')),
+    'network': int(os.environ.get('MAINTENANCE_INTERVAL_NETWORK_MONTHS', '6')),
+    'portable_or_stored': int(os.environ.get('MAINTENANCE_INTERVAL_STORED_MONTHS', '6')),
+}
 SHOW_MANAGEMENT_LINK = os.environ.get('SHOW_MANAGEMENT_LINK', '0') == '1'
 MANAGEMENT_LOGIN_URL = os.environ.get('MANAGEMENT_LOGIN_URL', '')
 

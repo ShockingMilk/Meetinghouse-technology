@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Publish guide{% endblock %}
+{% block content %}
+<nav class="breadcrumbs"><a href="{% url 'training:manage_guides' %}">Training guides</a><span>/</span><a href="{% url 'training:manage_guide_edit' guide.pk %}">{{ guide.title }}</a><span>/</span><span>Publish</span></nav>
+<section class="panel confirm-panel"><p class="eyebrow">CONFIRM PUBLICATION</p><h1>Publish “{{ guide.title }}”?</h1><p>This creates an immutable revision and makes that revision available on the public training site. An existing published revision remains available until this confirmation is submitted.</p><p><strong>Category:</strong> {{ guide.category.name }} · <strong>State:</strong> {{ guide.get_status_display }}</p><form method="post">{% csrf_token %}<label class="check-confirm"><input type="checkbox" name="confirm_publish" value="yes" required> I reviewed this guide and confirm it is ready for publication.</label><div class="form-actions"><button class="button" type="submit">Publish guide</button><a class="button button-secondary" href="{% url 'training:manage_guide_edit' guide.pk %}">Cancel</a></div></form></section>
+{% endblock %}

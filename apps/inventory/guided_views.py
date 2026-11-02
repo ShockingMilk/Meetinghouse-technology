@@ -97,6 +97,7 @@ def empty_draft():
         'approval_status': '',
         'replacement_estimate': '',
         'recommended_action': '',
+        'replacement_recommendation': '',
         'specification': '',
         'dependencies': '',
         'notes': '',
@@ -123,7 +124,7 @@ def draft_from_asset(asset):
         'model_number', 'serial_number', 'physical_location', 'installation_date',
         'warranty_end_date', 'end_of_life_date', 'security_support_end_date',
         'last_tested', 'documentation_url', 'funding_route', 'approval_status',
-        'replacement_estimate', 'recommended_action', 'specification',
+        'replacement_estimate', 'recommended_action', 'replacement_recommendation', 'specification',
         'dependencies', 'notes', 'ownership', 'condition', 'status',
         'responsible_party',
     )
