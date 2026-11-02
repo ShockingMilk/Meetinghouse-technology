@@ -10,6 +10,10 @@ SECRET_KEY = os.environ.get(
     default='development-only-key-change-before-deployment',
 )
 
+BRAND_LOGO_URL = os.environ.get('BRAND_LOGO_URL') or '/static/branding/site-logo.png'
+SHOW_MANAGEMENT_LINK = os.environ.get('SHOW_MANAGEMENT_LINK', '0') == '1'
+MANAGEMENT_LOGIN_URL = os.environ.get('MANAGEMENT_LOGIN_URL', '')
+
 DEBUG = False
 
 ALLOWED_HOSTS = os.environ.get(
@@ -119,5 +123,5 @@ LOGOUT_REDIRECT_URL = 'login'
 
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
-X_FRAME_OPTION = 'DENY'
+X_FRAME_OPTIONS = 'DENY'
 SECURE_CONTENT_TYPE_NOSNIFF = True

@@ -1,8 +1,17 @@
 '''Inventory views'''
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render
+from django.db.models import Count, Prefetch
+from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Asset, AssetCategory, AssetOwnership
+from .forms import RoomAssessmentForm
+from .models import (
+    Asset,
+    AssetCategory,
+    AssetOwnership,
+    Room,
+    RoomAssessment,
+)
 
 @login_required
 def asset_list(request):
@@ -17,6 +26,15 @@ def asset_list(request):
     ownership = request.GET.get('ownership')
     if ownership:
         assets = assets.filter(ownership=ownership)
+
+    room_filter = request.GET.get('room', '')
+    if room_filter == 'unassigned':
+        assets = assets.filter(room__isnull=True)
+    elif room_filter.isdigit():
+        room_filter = int(room_filter)
+        assets = assets.filter(room_id=room_filter)
+    elif room_filter:
+        room_filter = ''
 
     search = request.GET.get('q', '').strip()
     if search:
@@ -49,9 +67,106 @@ def asset_list(request):
             'ownership': ownership or '',
             'categories': AssetCategory.choices,
             'ownership_choices': AssetOwnership.choices,
+            'room_choices': Room.objects.order_by('name'),
+            'room_filter': room_filter,
+            'unassigned_asset_count': Asset.objects.filter(room__isnull=True).count(),
             'result_count': assets.count(),
             'drafts': drafts,
         },
+    )
+
+
+@login_required
+def room_list(request):
+    '''Show room equipment counts and each room's latest assessment.'''
+    assessment_history = RoomAssessment.objects.order_by(
+        '-assessment_date',
+        '-created_at',
+    )
+    rooms = Room.objects.annotate(
+        asset_count=Count('assets', distinct=True),
+    ).prefetch_related(
+        Prefetch(
+            'assessments',
+            queryset=assessment_history,
+            to_attr='assessment_history',
+        ),
+    )
+    room_data = [
+        {
+            'room': room,
+            'asset_count': room.asset_count,
+            'latest_assessment': (
+                room.assessment_history[0]
+                if room.assessment_history
+                else None
+            ),
+        }
+        for room in rooms
+    ]
+
+    return render(
+        request,
+        'inventory/room_list.html',
+        {
+            'room_data': room_data,
+            'unassigned_asset_count': Asset.objects.filter(
+                room__isnull=True,
+            ).count(),
+        },
+    )
+
+
+@login_required
+def room_detail(request, pk: int):
+    '''Show room details, equipment, current assessment, and history.'''
+    room = get_object_or_404(
+        Room.objects.prefetch_related(
+            'assets',
+            Prefetch(
+                'assessments',
+                queryset=RoomAssessment.objects.order_by(
+                    '-assessment_date',
+                    '-created_at',
+                ),
+                to_attr='assessment_history',
+            ),
+        ),
+        pk=pk,
+    )
+    assessments = room.assessment_history
+
+    return render(
+        request,
+        'inventory/room_detail.html',
+        {
+            'room': room,
+            'assets': room.assets.all(),
+            'assessments': assessments,
+            'latest_assessment': assessments[0] if assessments else None,
+        },
+    )
+
+
+@login_required
+def room_assessment_create(request, pk: int):
+    '''Create an append-only technology assessment for a room.'''
+    room = get_object_or_404(Room, pk=pk)
+    if request.method == 'POST':
+        form = RoomAssessmentForm(request.POST)
+        if form.is_valid():
+            assessment = form.save(commit=False)
+            assessment.room = room
+            assessment.save()
+            messages.success(request, f'Assessment saved for {room.name}.')
+            return redirect('inventory:room_detail', pk=room.pk)
+    else:
+        form = RoomAssessmentForm()
+
+    return render(
+        request,
+        'inventory/room_assessment_form.html',
+        {'room': room, 'form': form},
     )
 
 @login_required

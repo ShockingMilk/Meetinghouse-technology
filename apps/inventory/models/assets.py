@@ -11,7 +11,7 @@ class AssetCategory(models.TextChoices):
     COMPUTING = 'computing', 'Computing'
     NETWORK = 'network', 'Network'
     POWER = 'power', 'Power'
-    PRINTER = 'printer', 'PRINTER'
+    PRINTER = 'printer', 'Printer'
     VIDEO = 'video', 'Video'
     OTHER = 'other', 'Other'
 
@@ -28,7 +28,7 @@ class AssetCondition(models.TextChoices):
     NEW = 'new', 'New'
     GOOD = 'good', 'Good'
     FAIR = 'fair', 'Fair'
-    POOR = 'poor', 'POOR'
+    POOR = 'poor', 'Poor'
     FAILED = 'failed', 'Failed'
     UNKNOWN = 'unknown', 'Unknown'
 
@@ -172,7 +172,7 @@ class Asset(models.Model):
     class Meta:
         ordering = ['inventory_number']
         verbose_name = 'Technology Asset'
-        verbose_name_plural = 'Technologyi Assets'
+        verbose_name_plural = 'Technology Assets'
 
     def __str__(self) -> str:
         '''Return a readable inventory identifier'''

@@ -9,13 +9,14 @@ from .models import (
     CameraPreset,
     MaintenanceRecord,
     Room,
+    RoomAssessment,
     SoftwareInstallation,
     VideoWorkflow,
 )
 
 
 @admin.register(Room)
-class RoodAdmin(admin.ModelAdmin):
+class RoomAdmin(admin.ModelAdmin):
     """Admin configuration for rooms"""
 
     list_display = ("name", "room_number", "priority")
@@ -34,6 +35,8 @@ class BuildingAssessmentAdmin(admin.ModelAdmin):
         "network_status",
         "printing_type",
         "video_setup",
+        "local_management_status",
+        "room_priority",
         "funding_arrangement",
     )
 
@@ -41,10 +44,48 @@ class BuildingAssessmentAdmin(admin.ModelAdmin):
         "building_role",
         "audio_status",
         "network_status",
+        "local_management_status",
         "funding_arrangement",
+        "room_priority",
     )
 
     readonly_fields = ("assessment_date",)
+
+
+@admin.register(RoomAssessment)
+class RoomAssessmentAdmin(admin.ModelAdmin):
+    """Admin configuration for historical room assessments."""
+
+    list_display = (
+        "room",
+        "assessment_date",
+        "overall_status",
+        "follow_up_required",
+        "assessed_by",
+    )
+    list_filter = (
+        "overall_status",
+        "follow_up_required",
+        "assessment_date",
+    )
+    search_fields = (
+        "room__name",
+        "room__room_number",
+        "assessed_by",
+        "notes",
+        "follow_up_notes",
+    )
+    readonly_fields = ("created_at",)
+
+    def get_readonly_fields(self, request, obj=None):
+        """Keep saved assessments historical while allowing new entries."""
+        if obj is None:
+            return self.readonly_fields
+        return tuple(field.name for field in self.model._meta.fields)
+
+    def has_delete_permission(self, request, obj=None):
+        """Preserve assessment history from accidental deletion."""
+        return False
 
 
 class AssetConnectionInline(admin.TabularInline):

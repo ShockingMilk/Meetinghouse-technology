@@ -9,6 +9,7 @@ from .models import (
     AssetOwnership,
     AssetStatus,
     Room,
+    RoomAssessment,
     RoomPriority,
 )
 
@@ -140,6 +141,44 @@ class AssetResponsibilityForm(forms.Form):
         initial=AssetStatus.UNKNOWN,
     )
     responsible_party = forms.CharField(max_length=150, required=False)
+
+
+class RoomAssessmentForm(forms.ModelForm):
+    """Create a historical assessment for one room."""
+
+    class Meta:
+        model = RoomAssessment
+        fields = (
+            'assessment_date',
+            'assessed_by',
+            'overall_status',
+            'audio_status',
+            'audio_notes',
+            'video_status',
+            'video_notes',
+            'network_status',
+            'network_notes',
+            'printing_status',
+            'printing_notes',
+            'assistive_listening_status',
+            'assistive_listening_notes',
+            'power_status',
+            'power_notes',
+            'notes',
+            'follow_up_required',
+            'follow_up_notes',
+        )
+        widgets = {
+            'assessment_date': forms.DateInput(attrs={'type': 'date'}),
+            'audio_notes': forms.Textarea(attrs={'rows': 3}),
+            'video_notes': forms.Textarea(attrs={'rows': 3}),
+            'network_notes': forms.Textarea(attrs={'rows': 3}),
+            'printing_notes': forms.Textarea(attrs={'rows': 3}),
+            'assistive_listening_notes': forms.Textarea(attrs={'rows': 3}),
+            'power_notes': forms.Textarea(attrs={'rows': 3}),
+            'notes': forms.Textarea(attrs={'rows': 4}),
+            'follow_up_notes': forms.Textarea(attrs={'rows': 3}),
+        }
 
 
 WIZARD_FORMS = {

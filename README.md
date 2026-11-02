@@ -1,6 +1,6 @@
 # Meetinghouse Technology
 
-A Django application for documenting and supporting technology used in a meetinghouse. The management area requires sign-in; training pages are open without sign-in. The current proof of concept provides a management dashboard, a searchable equipment inventory, asset detail pages, and a training landing page.
+A Django application for documenting and supporting technology used in a meetinghouse. The management area requires sign-in; training pages are open without sign-in. The current proof of concept provides a management dashboard, searchable equipment inventory, room assessments, asset detail pages, and a training landing page.
 
 > This is a local planning and documentation tool. It does not replace Church policy, FMG processes, or required authorization. Keep management endpoints off the public Internet; building public-network access is distinct from Internet access.
 
@@ -8,12 +8,14 @@ A Django application for documenting and supporting technology used in a meeting
 
 - **Management dashboard** — counts total assets, active assets, and assets with ownership to verify.
 - **Technology inventory** — search by asset name or inventory number; filter by category and ownership.
+- **Room workspace** — review room priorities, assigned equipment, assessment history, and follow-up needs; add equipment directly to a room.
+- **Room assessments** — record dated, append-only condition snapshots for audio, video, network, printing, assistive listening, power, and overall room status.
 - **Equipment wizard** — add or edit equipment through six guided steps, save and resume an incomplete draft, add rooms in place, and confirm the complete record before saving.
 - **Asset records** — view asset identity, location, status, connections, installed software, camera presets, and notes.
 - **Administration** — Django admin at `/admin/` for managing records.
 - **Training** — a starter page for audio, video/Zoom, printing, and assistive listening material.
 
-The application is an early POC. The equipment wizard covers the core asset record; guided forms for connections, maintenance, software, camera presets, broadcast workflows, and building assessments remain planned. See [docs/INVENTORY.md](docs/INVENTORY.md) for inventory guidance and [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for the staged roadmap.
+The application is an early POC. The equipment wizard and room assessment workflow cover core inventory operations; guided forms for connections, maintenance, software, camera presets, and broadcast workflows remain planned. See [docs/INVENTORY.md](docs/INVENTORY.md) for inventory guidance and [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for the staged roadmap.
 
 ## Who can access each part
 
@@ -43,14 +45,30 @@ Here, “public network” means the building's public network; it does not mean
    docker compose up --build -d
    ```
 
-4. Apply database migrations and create an administrator:
+4. Check the migration state and generate the room-assessment migration:
 
    ```sh
-   docker compose exec web python manage.py migrate
-   docker compose exec web python manage.py createsuperuser
+   sudo docker compose exec web python manage.py showmigrations inventory
+   sudo docker compose exec web python manage.py makemigrations inventory
+   sudo docker compose exec web python manage.py makemigrations --check --dry-run
+   sudo docker compose exec web python manage.py check
    ```
 
-5. Visit the parts of the site:
+   Migration `0002` contains the data-preserving model cleanup from the previous
+   phase. This phase adds `RoomAssessment`, which requires a new migration.
+   Review the generated migration under `apps/inventory/migrations/`; keep
+   existing migrations unchanged. If Django asks whether
+   `local_managment_status` was renamed to `local_management_status`, confirm
+   the rename so existing values are preserved.
+
+5. Once the checks pass and the migration looks correct, migrate and create an administrator:
+
+   ```sh
+   sudo docker compose exec web python manage.py migrate
+   sudo docker compose exec web python manage.py createsuperuser
+   ```
+
+6. Visit the parts of the site:
 
    - <http://127.0.0.1:8000/> — management dashboard; sign in with the administrator account.
    - <http://127.0.0.1:8000/inventory/> — equipment inventory; sign-in required.
@@ -60,6 +78,15 @@ Here, “public network” means the building's public network; it does not mean
 To start the system again after stopping it, run `docker compose up -d` from the repository root. To stop it, run `docker compose down`; this retains the development database volume.
 
 By default the site binds to localhost on port `8000`. Change `WEB_PORT` in `.env` to use another local port.
+
+### Branding
+
+The shared management and training templates use a configurable logo. The
+provided Church logo is installed locally at `static/branding/site-logo.png`
+and is ignored by Git. `BRAND_LOGO_URL` in `.env` and `.env.training` can point
+to a different image; if the image cannot load, the app shows its `MT` fallback.
+For Docker deployments, the logo must be present in the build context when the
+image is built. See [static/branding/README.md](static/branding/README.md).
 
 ### Preview the training-only profile
 
@@ -74,6 +101,12 @@ docker compose --env-file .env.training -f compose.training.yaml up --build -d
 Open <http://127.0.0.1:8081/training/>. The root address redirects to training. This deployment profile does not share the management database volume. Stop it with `docker compose --env-file .env.training -f compose.training.yaml down`.
 
 The training-only URL configuration serves only training routes; management, inventory, login, logout, and Django admin routes are not registered. The management production profile remains separate. Before deployment, configure each profile's allowed host names, TLS termination, and network bindings for the approved building network setup.
+
+The training-only profile hides management sign-in by default. To show a link
+from a training deployment intended for private-network use, set both
+`SHOW_MANAGEMENT_LINK=1` and `MANAGEMENT_LOGIN_URL` to the private management
+login address in that deployment's environment file. The link is navigation
+only; management remains protected by the separate deployment and sign-in.
 
 ### Common commands
 

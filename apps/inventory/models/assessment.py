@@ -45,6 +45,7 @@ class BuildingAssessment(models.Model):
         PRIORITY = 'priority', 'Priority'
         NORMAL = 'normal', 'Normal'
         LOW = 'low', 'Low'
+        UNKNOWN = 'unknown', 'Unknown'
 
     building_role = models.CharField(
         max_length=20,
@@ -76,7 +77,7 @@ class BuildingAssessment(models.Model):
         default=VideoSetup.UNKNOWN,
     )
 
-    local_managment_status = models.CharField(
+    local_management_status = models.CharField(
         max_length=20,
         choices=AssessmentStatus.choices,
         default=AssessmentStatus.UNKNOWN,

@@ -54,7 +54,23 @@ Draft behavior:
 
 Before calling this milestone complete, run the wizard tests and manually review the workflow at phone and desktop widths, including incomplete drafts, invalid fields, duplicate inventory numbers, room quick-add, edit confirmation, and cancellation.
 
-## Milestone 3 — Supporting inventory forms
+## Milestone 3 — Room assessment and room inventory integration
+
+**Status: Implemented; generate and apply the RoomAssessment migration**
+
+- Keep `Room` as the current room record and preserve assessment history in the separate `RoomAssessment` model.
+- Show room priority, equipment count, latest assessment, and latest follow-up status in the room overview.
+- Show assigned equipment, latest status, and dated assessment history on the room detail page.
+- Add equipment from a room with that room preselected in the existing wizard.
+- Filter inventory to equipment that is not assigned to a room.
+- Require authentication for all room management and assessment views.
+- Add an assessment without requiring existing equipment; a room may need an assessment to document missing technology.
+- Preserve saved assessment history; existing assessments are read-only in Admin and cannot be deleted there.
+- Cover the room overview, assessment creation, historical ordering, room-prefilled equipment wizard, and unassigned filter with inventory tests.
+
+The assessment form captures overall, audio, video, network, printing, assistive-listening, and power status, observations, assessor, date, general notes, and follow-up. `Room.priority` remains the current room priority; the historical assessment does not rewrite room or asset data.
+
+## Milestone 4 — Supporting inventory forms
 
 **Status: Planned**
 
@@ -69,13 +85,13 @@ Build guided forms for the related models that currently have admin-only editing
 
 Use existing models and admin screens as the source of truth. Add migrations only when a real data requirement cannot be represented by current fields.
 
-## Milestone 4 — Training content
+## Milestone 5 — Training content
 
 **Status: Planned**
 
 Replace the training landing-page placeholders with concise, task-based instructions for audio, video and Zoom, printing, and assistive listening. Training remains open without an application login. Exclude management records, credentials, member information, and sensitive network details.
 
-## Milestone 5 — Deployment and operations
+## Milestone 6 — Deployment and operations
 
 **Status: Planned**
 
@@ -100,3 +116,15 @@ The local Docker setup is for development and review. It is not evidence that th
 - [ ] Cancelling an asset draft does not delete a room created separately.
 - [ ] Existing list, search, filters, and asset detail pages continue to work.
 - [ ] Wizard tests pass and the layout is usable at narrow and wide viewport sizes.
+
+## Acceptance checklist for room assessments
+
+- [ ] All room pages and assessment creation require sign-in.
+- [ ] A room with no assigned assets can still be assessed.
+- [ ] New assessments attach to the room in the URL and preserve earlier entries.
+- [ ] Room overview shows each room's equipment count and latest assessment/follow-up state.
+- [ ] Room detail shows assigned assets and the full assessment history.
+- [ ] Adding equipment from a room preselects that room in the existing wizard.
+- [ ] The inventory filter can show only unassigned equipment.
+- [ ] Admin can review saved assessments but cannot edit or delete historical entries.
+- [ ] Room assessment tests and Django system checks pass after migration `0003` is generated and applied.

@@ -6,6 +6,17 @@ app_name = 'inventory'
 
 urlpatterns = [
     path('', views.asset_list, name='asset_list'),
+    path('rooms/', views.room_list, name='room_list'),
+    path(
+        'rooms/<int:pk>/',
+        views.room_detail,
+        name='room_detail',
+    ),
+    path(
+        'rooms/<int:pk>/assessments/new/',
+        views.room_assessment_create,
+        name='room_assessment_create',
+    ),
     path('new/', guided_views.start_asset_creation, name='asset_wizard_start'),
     path(
         'drafts/<uuid:wizard_id>/step/<int:step>/',

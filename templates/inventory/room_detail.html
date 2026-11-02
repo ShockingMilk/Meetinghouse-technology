@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}{{ room.name }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'inventory:room_list' %}">Rooms</a><span aria-hidden="true">/</span><span>{{ room.name }}</span></div>
+<div class="page-heading detail-heading">
+    <div><p class="eyebrow">ROOM INVENTORY{% if room.room_number %} · ROOM {{ room.room_number }}{% endif %}</p><h1>{{ room.name }}</h1><p class="lede">{{ room.description|default:"Equipment, assessments, and follow-up for this room." }}</p></div>
+    <div class="page-actions"><a class="button button-secondary" href="{% url 'inventory:asset_wizard_start' %}?room={{ room.pk }}">Add equipment <span aria-hidden="true">＋</span></a><a class="button" href="{% url 'inventory:room_assessment_create' room.pk %}">New assessment <span aria-hidden="true">＋</span></a></div>
+</div>
+
+<div class="room-detail-grid">
+    <section class="panel room-summary-panel">
+        <div class="section-heading"><div><p class="eyebrow">ROOM INFORMATION</p><h2>At a glance</h2></div><span class="status-pill status-{{ room.priority }}">{{ room.get_priority_display }} priority</span></div>
+        <dl class="details-grid">
+            <dt>Room number</dt><dd>{{ room.room_number|default:"Not recorded" }}</dd>
+            <dt>Assigned equipment</dt><dd>{{ assets|length }}</dd>
+            <dt>Assessments recorded</dt><dd>{{ assessments|length }}</dd>
+            {% if room.notes %}<dt>Room notes</dt><dd>{{ room.notes|linebreaksbr }}</dd>{% endif %}
+        </dl>
+    </section>
+
+    <section class="panel latest-assessment-panel">
+        <div class="section-heading"><div><p class="eyebrow">ASSESSMENT STATUS</p><h2>Latest assessment</h2></div></div>
+        {% if latest_assessment %}
+            <div class="latest-assessment-status"><span class="status-pill status-{{ latest_assessment.overall_status }}">{{ latest_assessment.get_overall_status_display }}</span><time datetime="{{ latest_assessment.assessment_date|date:'Y-m-d' }}">{{ latest_assessment.assessment_date|date:"M j, Y" }}</time></div>
+            {% if latest_assessment.assessed_by %}<p class="muted-line">Assessed by {{ latest_assessment.assessed_by }}</p>{% endif %}
+            {% if latest_assessment.follow_up_required %}<p class="follow-up-callout"><strong>Follow-up required</strong>{% if latest_assessment.follow_up_notes %}<span>{{ latest_assessment.follow_up_notes }}</span>{% endif %}</p>{% else %}<p class="muted-line">No follow-up recorded for the latest assessment.</p>{% endif %}
+        {% else %}
+            <p class="empty-copy">No assessment has been recorded for this room yet.</p>
+            <a class="text-link" href="{% url 'inventory:room_assessment_create' room.pk %}">Record the first assessment →</a>
+        {% endif %}
+    </section>
+</div>
+
+<section class="panel room-equipment-panel">
+    <div class="section-heading"><div><p class="eyebrow">ASSIGNED ASSETS</p><h2>Room equipment</h2></div><a class="button button-small" href="{% url 'inventory:asset_wizard_start' %}?room={{ room.pk }}">Add equipment <span aria-hidden="true">＋</span></a></div>
+    <div class="table-container room-inner-table"><table>
+        <caption class="sr-only">Equipment assigned to {{ room.name }}</caption>
+        <thead><tr><th>Inventory number</th><th>Equipment</th><th>Category</th><th>Condition</th><th>Status</th></tr></thead>
+        <tbody>
+        {% for asset in assets %}
+            <tr><td><a class="record-link" href="{% url 'inventory:asset_detail' asset.pk %}">{{ asset.inventory_number }}</a></td><td>{{ asset.name }}</td><td>{{ asset.get_category_display }}</td><td><span class="status-pill status-{{ asset.condition }}">{{ asset.get_condition_display }}</span></td><td><span class="status-pill status-{{ asset.status }}">{{ asset.get_status_display }}</span></td></tr>
+        {% empty %}
+            <tr><td colspan="5" class="empty-state"><strong>No equipment assigned</strong><span>You can still assess this room and document technology that is missing or not applicable.</span><a class="button button-small" href="{% url 'inventory:asset_wizard_start' %}?room={{ room.pk }}">Add equipment to {{ room.name }}</a></td></tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+</section>
+
+<section class="room-history-section">
+    <div class="section-heading"><div><p class="eyebrow">ROOM CONDITION</p><h2>Assessment history</h2><p class="lede">Each assessment is kept as a dated record.</p></div><a class="button button-secondary button-small" href="{% url 'inventory:room_assessment_create' room.pk %}">New assessment</a></div>
+    {% for assessment in assessments %}
+        <article class="panel assessment-history-card">
+            <div class="review-title"><div><p class="eyebrow">{{ assessment.assessment_date|date:"M j, Y" }}{% if assessment.assessed_by %} · ASSESSED BY {{ assessment.assessed_by|upper }}{% endif %}</p><h3>Room assessment</h3></div><span class="status-pill status-{{ assessment.overall_status }}">{{ assessment.get_overall_status_display }}</span></div>
+            <div class="assessment-area-grid">
+                <div><span>Audio</span><strong class="status-text status-text-{{ assessment.audio_status }}">{{ assessment.get_audio_status_display }}</strong>{% if assessment.audio_notes %}<p>{{ assessment.audio_notes|linebreaksbr }}</p>{% endif %}</div>
+                <div><span>Video</span><strong class="status-text status-text-{{ assessment.video_status }}">{{ assessment.get_video_status_display }}</strong>{% if assessment.video_notes %}<p>{{ assessment.video_notes|linebreaksbr }}</p>{% endif %}</div>
+                <div><span>Network</span><strong class="status-text status-text-{{ assessment.network_status }}">{{ assessment.get_network_status_display }}</strong>{% if assessment.network_notes %}<p>{{ assessment.network_notes|linebreaksbr }}</p>{% endif %}</div>
+                <div><span>Printing</span><strong class="status-text status-text-{{ assessment.printing_status }}">{{ assessment.get_printing_status_display }}</strong>{% if assessment.printing_notes %}<p>{{ assessment.printing_notes|linebreaksbr }}</p>{% endif %}</div>
+                <div><span>Assistive listening</span><strong class="status-text status-text-{{ assessment.assistive_listening_status }}">{{ assessment.get_assistive_listening_status_display }}</strong>{% if assessment.assistive_listening_notes %}<p>{{ assessment.assistive_listening_notes|linebreaksbr }}</p>{% endif %}</div>
+                <div><span>Power</span><strong class="status-text status-text-{{ assessment.power_status }}">{{ assessment.get_power_status_display }}</strong>{% if assessment.power_notes %}<p>{{ assessment.power_notes|linebreaksbr }}</p>{% endif %}</div>
+            </div>
+            {% if assessment.notes %}<div class="assessment-notes"><strong>General notes</strong><p>{{ assessment.notes|linebreaksbr }}</p></div>{% endif %}
+            {% if assessment.follow_up_required %}<div class="follow-up-callout"><strong>Follow-up required</strong>{% if assessment.follow_up_notes %}<span>{{ assessment.follow_up_notes|linebreaksbr }}</span>{% endif %}</div>{% endif %}
+        </article>
+    {% empty %}
+        <div class="panel empty-history"><strong>No assessment history yet</strong><p>Room assessments preserve the condition and notes observed on the date they were recorded.</p><a class="button button-small" href="{% url 'inventory:room_assessment_create' room.pk %}">Record an assessment</a></div>
+    {% endfor %}
+</section>
+
+<div class="detail-actions"><a class="back-link" href="{% url 'inventory:room_list' %}">← Back to rooms</a><a class="back-link" href="{% url 'inventory:asset_list' %}?room=unassigned">Review unassigned equipment</a></div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Rooms{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">INVENTORY WORKSPACE</p>
+        <h1>Rooms</h1>
+        <p class="lede">Building rooms, assigned technology, and the latest assessment for each area.</p>
+    </div>
+    <div class="page-actions">
+        <a class="button button-secondary" href="{% url 'inventory:asset_list' %}?room=unassigned">Unassigned equipment <span class="action-count">{{ unassigned_asset_count }}</span></a>
+        <a class="button" href="{% url 'inventory:asset_wizard_start' %}">Add equipment <span aria-hidden="true">＋</span></a>
+    </div>
+</div>
+
+<div class="inventory-list-heading">
+    <div><p class="eyebrow">ROOM OVERVIEW</p><h2>Equipment and assessment status</h2><p>Open a room to review its technology and assessment history.</p></div>
+    <div class="list-summary"><strong>{{ room_data|length }}</strong><span>room{{ room_data|length|pluralize }}</span></div>
+</div>
+
+<div class="table-container panel table-panel">
+    <table>
+        <caption class="sr-only">Rooms, assigned equipment counts, and latest assessment status</caption>
+        <thead><tr><th>Room</th><th>Priority</th><th>Equipment</th><th>Last assessed</th><th>Overall status</th><th>Follow-up</th><th><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody>
+        {% for item in room_data %}
+            <tr>
+                <td><a class="record-link" href="{% url 'inventory:room_detail' item.room.pk %}">{{ item.room.name }}</a>{% if item.room.room_number %}<small class="cell-subtitle">Room {{ item.room.room_number }}</small>{% endif %}</td>
+                <td><span class="status-pill status-{{ item.room.priority }}">{{ item.room.get_priority_display }}</span></td>
+                <td>{{ item.asset_count }}</td>
+                {% if item.latest_assessment %}
+                    <td>{{ item.latest_assessment.assessment_date|date:"M j, Y" }}</td>
+                    <td><span class="status-pill status-{{ item.latest_assessment.overall_status }}">{{ item.latest_assessment.get_overall_status_display }}</span></td>
+                    <td>{% if item.latest_assessment.follow_up_required %}<span class="status-pill status-review">Required</span>{% else %}<span class="status-pill status-good">None</span>{% endif %}</td>
+                {% else %}
+                    <td class="muted-cell">Not assessed</td><td><span class="status-pill">No assessment</span></td><td><span class="status-pill">—</span></td>
+                {% endif %}
+                <td><a class="table-action" href="{% url 'inventory:room_detail' item.room.pk %}">View room <span aria-hidden="true">→</span></a></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7" class="empty-state"><strong>No rooms have been added</strong><span>Add equipment and create the room during the first step, or use the equipment form to create rooms.</span><a class="button button-small" href="{% url 'inventory:asset_wizard_start' %}">Start an equipment record</a></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

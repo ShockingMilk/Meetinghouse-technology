@@ -29,6 +29,12 @@
     </section>
 </div>
 
+<section class="panel room-overview-strip">
+    <div class="room-overview-copy"><p class="eyebrow">ROOM ASSESSMENTS</p><h2>Room readiness</h2><p>Review assigned equipment, assessment history, and rooms needing follow-up.</p></div>
+    <div class="room-overview-progress"><div class="progress-label"><span>Rooms assessed</span><strong>{{ assessed_room_count }} of {{ room_count }}</strong></div><progress value="{{ assessed_room_count }}" max="{{ room_count|default:1 }}" aria-label="{{ assessed_room_count }} of {{ room_count }} rooms assessed"></progress><div class="room-overview-meta"><span>{{ follow_up_room_count }} room{{ follow_up_room_count|pluralize }} with follow-up</span><span>{{ unassigned_asset_count }} unassigned asset{{ unassigned_asset_count|pluralize }}</span></div></div>
+    <a class="button button-secondary" href="{% url 'inventory:room_list' %}">Open rooms <span aria-hidden="true">→</span></a>
+</section>
+
 <section class="panel tools-panel">
     <div class="section-heading"><div><p class="eyebrow">QUICK ACCESS</p><h2>Management tools</h2></div></div>
 
@@ -36,6 +42,11 @@
         <li>
             <a href="{% url 'inventory:asset_list' %}">
                 <strong>Building technology inventory</strong><span>Search equipment and review its recorded details.</span>
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'inventory:room_list' %}">
+                <strong>Rooms and assessments</strong><span>Review room equipment, assessment history, and follow-up.</span>
             </a>
         </li>
         <li>

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Assess {{ room.name }}{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'inventory:room_list' %}">Rooms</a><span aria-hidden="true">/</span><a href="{% url 'inventory:room_detail' room.pk %}">{{ room.name }}</a><span aria-hidden="true">/</span><span>New assessment</span></div>
+<div class="page-heading">
+    <div><p class="eyebrow">ROOM ASSESSMENT · {{ room.name|upper }}</p><h1>Record an assessment</h1><p class="lede">Capture what you observe today. This creates a dated record and preserves earlier assessments.</p></div>
+</div>
+<form method="post" class="room-assessment-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-error-summary" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+
+    <section class="panel assessment-form-panel">
+        <div class="section-heading"><div><p class="eyebrow">RECORD DETAILS</p><h2>When and who</h2></div></div>
+        <div class="assessment-meta-grid">
+            {% include "inventory/_form_field.html" with field=form.assessment_date %}
+            {% include "inventory/_form_field.html" with field=form.assessed_by %}
+            {% include "inventory/_form_field.html" with field=form.overall_status %}
+        </div>
+    </section>
+
+    <section class="panel assessment-form-panel">
+        <div class="section-heading"><div><p class="eyebrow">TECHNOLOGY AREAS</p><h2>Condition by system</h2><p class="lede">Choose Unknown when the area is not verified, and Not Applicable when it does not apply to this room.</p></div></div>
+        <div class="assessment-form-grid">
+            <fieldset class="assessment-field-card"><legend>Audio</legend>{% include "inventory/_form_field.html" with field=form.audio_status %}{% include "inventory/_form_field.html" with field=form.audio_notes %}</fieldset>
+            <fieldset class="assessment-field-card"><legend>Video</legend>{% include "inventory/_form_field.html" with field=form.video_status %}{% include "inventory/_form_field.html" with field=form.video_notes %}</fieldset>
+            <fieldset class="assessment-field-card"><legend>Network</legend>{% include "inventory/_form_field.html" with field=form.network_status %}{% include "inventory/_form_field.html" with field=form.network_notes %}</fieldset>
+            <fieldset class="assessment-field-card"><legend>Printing</legend>{% include "inventory/_form_field.html" with field=form.printing_status %}{% include "inventory/_form_field.html" with field=form.printing_notes %}</fieldset>
+            <fieldset class="assessment-field-card"><legend>Assistive listening</legend>{% include "inventory/_form_field.html" with field=form.assistive_listening_status %}{% include "inventory/_form_field.html" with field=form.assistive_listening_notes %}</fieldset>
+            <fieldset class="assessment-field-card"><legend>Power</legend>{% include "inventory/_form_field.html" with field=form.power_status %}{% include "inventory/_form_field.html" with field=form.power_notes %}</fieldset>
+        </div>
+    </section>
+
+    <section class="panel assessment-form-panel">
+        <div class="section-heading"><div><p class="eyebrow">NOTES AND NEXT ACTIONS</p><h2>Observations and follow-up</h2></div></div>
+        {% include "inventory/_form_field.html" with field=form.notes %}
+        <label class="checkbox-row{% if form.follow_up_required.errors %} has-error{% endif %}" for="{{ form.follow_up_required.id_for_label }}">{{ form.follow_up_required }}<span><strong>Follow-up required</strong><small>Mark this when someone needs to take a further action.</small></span></label>
+        {% if form.follow_up_required.errors %}<div class="field-errors" role="alert">{{ form.follow_up_required.errors }}</div>{% endif %}
+        {% include "inventory/_form_field.html" with field=form.follow_up_notes %}
+    </section>
+
+    <div class="wizard-actions">
+        <a class="button button-secondary" href="{% url 'inventory:room_detail' room.pk %}">Cancel</a>
+        <button class="button" type="submit">Save assessment</button>
+    </div>
+</form>
+{% endblock %}

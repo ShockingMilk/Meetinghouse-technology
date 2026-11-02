@@ -129,7 +129,12 @@ def draft_from_asset(asset):
 def start_asset_creation(request):
     '''Start a new equipment draft and open its first step.'''
     wizard_id = str(uuid.uuid4())
-    store_draft(request, wizard_id, empty_draft())
+    draft = empty_draft()
+    room_id = request.GET.get('room', '')
+    if room_id:
+        room = get_object_or_404(Room, pk=room_id)
+        draft['room'] = str(room.pk)
+    store_draft(request, wizard_id, draft)
     return redirect('inventory:asset_wizard_step', wizard_id=wizard_id, step=1)
 
 

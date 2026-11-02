@@ -4,6 +4,7 @@ from .camera_preset import CameraPreset, CameraPresetStatus
 from .connection import AssetConnection, CompatibilityStatus, ConnectionMedium, ConnectionType
 from .maintenance import MaintenanceRecord
 from .room import Room, RoomPriority
+from .room_assessment import RoomAssessment
 from .software import SoftwareInstallation, SoftwareRole
 from .video_workflow import VideoWorkflow, VideoWorkflowMode
 
@@ -25,6 +26,7 @@ __all__ = [
     'MaintenanceRecord',
     'PrintingType',
     'Room',
+    'RoomAssessment',
     'RoomPriority',
     'SoftwareInstallation',
     'SoftwareRole',

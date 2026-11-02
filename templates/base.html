@@ -8,6 +8,7 @@
     <title>{% block title %}Meetinghouse Technology{% endblock %} · Meetinghouse Technology</title>
 
     <link rel="stylesheet" href="{% static 'css/site.css' %}">
+    <script src="{% static 'js/brand-logo.js' %}" defer></script>
 </head>
 <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -15,13 +16,14 @@
     <div class="app-shell">
         <aside class="app-sidebar" aria-label="Management navigation">
             <a class="brand" href="{% url 'management:dashboard' %}">
-                <span class="brand-mark" aria-hidden="true">MT</span>
+                <span class="brand-mark has-logo" aria-hidden="true"><img class="brand-logo" src="{{ brand_logo_url }}" alt=""><span class="brand-fallback">MT</span></span>
                 <span><strong>Meetinghouse</strong><small>Technology workspace</small></span>
             </a>
             <p class="sidebar-label">WORKSPACE</p>
             <nav class="sidebar-nav" aria-label="Main navigation">
                 <a href="{% url 'management:dashboard' %}" {% if request.resolver_match.namespace == 'management' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▦</span>Overview</a>
-                <a href="{% url 'inventory:asset_list' %}" {% if request.resolver_match.namespace == 'inventory' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▤</span>Inventory</a>
+                <a href="{% url 'inventory:asset_list' %}" {% if request.resolver_match.namespace == 'inventory' and request.resolver_match.url_name != 'room_list' and request.resolver_match.url_name != 'room_detail' and request.resolver_match.url_name != 'room_assessment_create' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▤</span>Inventory</a>
+                <a href="{% url 'inventory:room_list' %}" {% if request.resolver_match.url_name == 'room_list' or request.resolver_match.url_name == 'room_detail' or request.resolver_match.url_name == 'room_assessment_create' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▧</span>Rooms</a>
                 <a href="{% url 'training:index' %}" {% if request.resolver_match.namespace == 'training' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▱</span>Training guides<span class="nav-external" aria-label="Available without sign-in">↗</span></a>
             </nav>
             <div class="sidebar-bottom">
@@ -39,12 +41,16 @@
     <header class="site-header public-header">
         <div class="container">
             <a class="brand" href="{% if training_only %}{% url 'training:index' %}{% else %}{% url 'training:index' %}{% endif %}">
-                <span class="brand-mark" aria-hidden="true">MT</span>
+                <span class="brand-mark has-logo" aria-hidden="true"><img class="brand-logo" src="{{ brand_logo_url }}" alt=""><span class="brand-fallback">MT</span></span>
                 <span><strong>Meetinghouse</strong><small>Technology training</small></span>
             </a>
             <nav aria-label="Main navigation">
                 <a href="{% url 'training:index' %}" {% if request.resolver_match.namespace == 'training' %}aria-current="page"{% endif %}>Training guides</a>
-                {% if not training_only %}<a href="{% url 'login' %}">Management sign in</a>{% endif %}
+                {% if training_only %}
+                    {% if show_management_link and management_login_url %}<a href="{{ management_login_url }}">Management sign in</a>{% endif %}
+                {% else %}
+                    <a href="{% url 'login' %}">Management sign in</a>
+                {% endif %}
             </nav>
         </div>
     </header>

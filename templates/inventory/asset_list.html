@@ -40,8 +40,12 @@
             <select id="ownership" name="ownership"><option value="">All ownership</option>
             {% for value, label in ownership_choices %}<option value="{{ value }}" {% if ownership == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
         </div>
+        <div class="field"><label for="room">Room</label>
+            <select id="room" name="room"><option value="">All rooms</option><option value="unassigned" {% if room_filter == 'unassigned' %}selected{% endif %}>Unassigned equipment</option>
+            {% for room in room_choices %}<option value="{{ room.pk }}" {% if room_filter == room.pk %}selected{% endif %}>{{ room.name }}</option>{% endfor %}</select>
+        </div>
         <div class="filter-actions"><button class="button" type="submit">Apply filters</button>
-            {% if search or category or ownership %}<a class="reset-link" href="{% url 'inventory:asset_list' %}">Clear</a>{% endif %}</div>
+            {% if search or category or ownership or room_filter %}<a class="reset-link" href="{% url 'inventory:asset_list' %}">Clear</a>{% endif %}</div>
     </div>
 </form>
 
