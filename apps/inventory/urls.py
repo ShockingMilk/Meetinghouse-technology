@@ -18,6 +18,8 @@ urlpatterns = [
         name='room_assessment_create',
     ),
     path('new/', guided_views.start_asset_creation, name='asset_wizard_start'),
+    path('labels/print/', views.asset_labels, name='asset_labels'),
+    path('<int:pk>/label/', views.asset_label, name='asset_label'),
     path(
         'drafts/<uuid:wizard_id>/step/<int:step>/',
         guided_views.asset_wizard_step,

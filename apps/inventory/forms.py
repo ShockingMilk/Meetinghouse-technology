@@ -8,6 +8,10 @@ from .models import (
     AssetCondition,
     AssetOwnership,
     AssetStatus,
+    AssetConnection,
+    ConnectionType,
+    ConnectionMedium,
+    CompatibilityStatus,
     Room,
     RoomAssessment,
     RoomPriority,
@@ -143,6 +147,56 @@ class AssetResponsibilityForm(forms.Form):
     responsible_party = forms.CharField(max_length=150, required=False)
 
 
+class AssetDetailsForm(AssetGeneralForm):
+    """Collect common identity, lifecycle, ownership, and notes in one step."""
+
+    CATEGORY_DETAIL_HELP = {
+        AssetCategory.VIDEO: 'For example: camera type, video connection, power, mounting, or control method.',
+        AssetCategory.AUDIO: 'For example: speaker or microphone type, signal connection, power, or mounting.',
+        AssetCategory.PRINTER: 'For example: printer type, supported media, or connection method.',
+        AssetCategory.NETWORK: 'For example: equipment role, port count, or uplink type. Do not record credentials or passwords.',
+        AssetCategory.COMPUTING: 'For example: device role, operating system, or installed function. Do not record passwords.',
+    }
+
+    def __init__(self, *args, asset_pk=None, category=None, **kwargs):
+        super().__init__(*args, asset_pk=asset_pk, **kwargs)
+        self.fields.update(AssetTechnicalForm.base_fields)
+        self.fields.update(AssetResponsibilityForm.base_fields)
+        self.fields['specification'].label = 'Category-specific details'
+        self.fields['specification'].help_text = self.CATEGORY_DETAIL_HELP.get(
+            category,
+            'Add relevant details for this equipment category. Do not include passwords, network credentials, or confidential building information.',
+        )
+
+
+class AssetConnectionsForm(forms.Form):
+    """Optionally connect the new equipment to existing inventory records."""
+
+    connected_assets = forms.ModelMultipleChoiceField(
+        queryset=Asset.objects.order_by('inventory_number'),
+        required=False,
+        label='Related equipment',
+        help_text='Select existing equipment. Connections do not create duplicate records.',
+        widget=forms.CheckboxSelectMultiple,
+    )
+    connection_direction = forms.ChoiceField(
+        choices=(('outgoing', 'Equipment sends to selected items'), ('incoming', 'Selected items send to this equipment')),
+        required=False,
+        initial='outgoing',
+        label='Direction',
+    )
+    connection_type = forms.ChoiceField(choices=ConnectionType.choices, required=False, initial=ConnectionType.OTHER)
+    connection_medium = forms.ChoiceField(choices=ConnectionMedium.choices, required=False, initial=ConnectionMedium.OTHER)
+    interface = forms.CharField(max_length=100, required=False)
+    compatibility = forms.ChoiceField(choices=CompatibilityStatus.choices, required=False, initial=CompatibilityStatus.UNKNOWN)
+    connection_notes = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 2}))
+
+    def __init__(self, *args, asset_pk=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if asset_pk:
+            self.fields['connected_assets'].queryset = Asset.objects.exclude(pk=asset_pk).order_by('inventory_number')
+
+
 class RoomAssessmentForm(forms.ModelForm):
     """Create a historical assessment for one room."""
 
@@ -184,16 +238,14 @@ class RoomAssessmentForm(forms.ModelForm):
 WIZARD_FORMS = {
     1: RoomSelectionForm,
     2: AssetCategoryForm,
-    3: AssetGeneralForm,
-    4: AssetTechnicalForm,
-    5: AssetResponsibilityForm,
+    3: AssetDetailsForm,
+    4: AssetConnectionsForm,
 }
 
 WIZARD_STEPS = {
     1: 'Room',
     2: 'Category',
     3: 'Equipment details',
-    4: 'Technical details',
-    5: 'Responsibility',
-    6: 'Review and save',
+    4: 'Connections',
+    5: 'Review and save',
 }

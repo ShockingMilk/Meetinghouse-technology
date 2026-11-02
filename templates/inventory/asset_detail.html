@@ -149,6 +149,7 @@
 
 <div class="detail-actions">
     <a class="back-link" href="{% url 'inventory:asset_list' %}">← Back to inventory</a>
+    <a class="button button-secondary" href="{% url 'inventory:asset_label' asset.pk %}">Print label</a>
     <a class="button" href="{% url 'inventory:asset_wizard_edit' asset.pk %}">Edit equipment</a>
 </div>
 {% endblock %}

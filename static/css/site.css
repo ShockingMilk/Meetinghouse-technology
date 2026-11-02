@@ -723,3 +723,37 @@ tbody tr:hover { background: #f9fcfa; }
     .inventory-list-heading { align-items: stretch; flex-direction: column; gap: 12px; }
     .inventory-list-heading .list-summary { justify-content: flex-start; }
 }
+
+/* Physical equipment label preparation */
+.label-selection-form { margin: 0 0 24px; }
+.label-selection-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 0 10px; color: var(--muted); font-size: 11px; }
+.asset-label-select { width: 17px; height: 17px; accent-color: var(--brand); }
+.label-page { max-width: 1060px; margin: 0 auto; }
+.label-page-toolbar { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 24px; }
+.label-page-toolbar h1 { margin: 0; }
+.label-page-toolbar .lede { margin-bottom: 0; }
+.label-grid { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+.equipment-label { width: 74mm; min-height: 22mm; display: flex; flex-direction: column; justify-content: center; gap: 2mm; padding: 3mm 4mm; border: 1px dashed #aebbb2; border-radius: 3px; background: #fff; color: #102a20; }
+.equipment-label-heading { overflow: hidden; color: #43584c; font-size: 8pt; font-weight: 700; letter-spacing: .06em; line-height: 1.1; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.equipment-label-main { overflow: hidden; font-size: 9pt; font-weight: 600; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+.equipment-label-main strong { font-weight: 800; }
+.label-reference-name { margin-top: 1mm; color: #68766e; font-size: 8px; line-height: 1.3; }
+.label-print-note { margin: 20px 0; color: var(--muted); font-size: 11px; }
+.label-empty-state { max-width: 700px; }
+.label-empty-state h2 { margin-top: 0; }
+
+@media (max-width: 720px) {
+    .label-selection-actions, .label-page-toolbar { align-items: stretch; flex-direction: column; }
+    .label-page-toolbar .page-actions { flex-wrap: wrap; }
+}
+
+@page { margin: 12mm; }
+@media print {
+    html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+    body { color: #111 !important; font-family: Arial, sans-serif !important; }
+    .skip-link, .app-sidebar, .workspace-header, .site-header, .site-footer, .no-print, .message { display: none !important; }
+    .app-shell, .app-main, #main-content, .public-main, .label-page { display: block !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
+    .label-grid { display: flex !important; gap: 5mm !important; }
+    .equipment-label { break-inside: avoid; border: 1px dashed #999 !important; border-radius: 0 !important; box-shadow: none !important; print-color-adjust: exact; }
+    .label-page-toolbar { display: none !important; }
+}

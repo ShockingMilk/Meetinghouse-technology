@@ -11,6 +11,7 @@ SECRET_KEY = os.environ.get(
 )
 
 BRAND_LOGO_URL = os.environ.get('BRAND_LOGO_URL') or '/static/branding/site-logo.png'
+ASSET_LABEL_SITE_HEADING = os.environ.get('ASSET_LABEL_SITE_HEADING', 'MEETINGHOUSE TECH').strip()
 SHOW_MANAGEMENT_LINK = os.environ.get('SHOW_MANAGEMENT_LINK', '0') == '1'
 MANAGEMENT_LOGIN_URL = os.environ.get('MANAGEMENT_LOGIN_URL', '')
 

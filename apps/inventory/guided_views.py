@@ -1,11 +1,11 @@
-'''Views for the session-based equipment entry wizard.'''
+'''Views for the guided equipment entry wizard.'''
 
 from datetime import date, datetime
 from decimal import Decimal
-import uuid
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError, transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -16,46 +16,47 @@ from .forms import (
     WIZARD_STEPS,
     RoomQuickAddForm,
 )
-from .models import Asset, Room, RoomPriority
-
-DRAFT_SESSION_KEY = 'inventory_wizard_drafts'
+from .models import Asset, AssetConnection, AssetDraft, Room, RoomPriority
 
 
 def get_drafts(request):
-    '''Return the active user's session-held equipment drafts.'''
-    return request.session.get(DRAFT_SESSION_KEY, {})
+    '''Return persistent drafts owned by the signed-in user.'''
+    return {str(obj.pk): obj.draft_data for obj in AssetDraft.objects.filter(created_by=request.user)}
 
 
 def get_draft_or_404(request, wizard_id):
-    '''Find one draft in this browser session.'''
-    draft = get_drafts(request).get(str(wizard_id))
-    if draft is None:
+    '''Find one draft owned by the signed-in user.'''
+    try:
+        obj = AssetDraft.objects.get(pk=wizard_id, created_by=request.user)
+    except (AssetDraft.DoesNotExist, ValueError):
         raise Http404('Inventory draft not found.')
-    return draft
+    return obj.draft_data
 
 
 def store_draft(request, wizard_id, draft):
-    '''Persist a changed draft into the Django session.'''
-    drafts = get_drafts(request).copy()
-    drafts[str(wizard_id)] = draft
-    request.session[DRAFT_SESSION_KEY] = drafts
+    '''Persist a changed draft owned by the active user.'''
+    record = AssetDraft.objects.get(pk=wizard_id, created_by=request.user)
+    record.draft_data = draft
+    record.save(update_fields=('draft_data', 'updated_at'))
 
 
 def delete_draft(request, wizard_id):
-    '''Remove a completed or cancelled draft from the session.'''
-    drafts = get_drafts(request).copy()
-    drafts.pop(str(wizard_id), None)
-    request.session[DRAFT_SESSION_KEY] = drafts
+    '''Remove a completed or cancelled persistent draft.'''
+    AssetDraft.objects.filter(pk=wizard_id, created_by=request.user).delete()
 
 
 def serialize_value(value):
-    '''Convert form values into types supported by Django's session serializer.'''
+    '''Convert form values into JSON-compatible draft data.'''
     if value is None:
         return ''
     if isinstance(value, (date, datetime, Decimal)):
         return str(value)
     if isinstance(value, Room):
         return str(value.pk)
+    if hasattr(value, 'values_list'):
+        return [str(item) for item in value.values_list('pk', flat=True)]
+    if isinstance(value, (list, tuple)):
+        return [str(item.pk if hasattr(item, 'pk') else item) for item in value]
     return str(value)
 
 
@@ -69,7 +70,7 @@ def save_raw_form(draft, form, post_data):
     '''Keep partial user input when saving or navigating back from a step.'''
     for field_name in form.fields:
         if field_name in post_data:
-            draft[field_name] = post_data.get(field_name, '')
+            draft[field_name] = post_data.getlist(field_name) if hasattr(form.fields[field_name].widget, 'allow_multiple_selected') and form.fields[field_name].widget.allow_multiple_selected else post_data.get(field_name, '')
 
 
 def empty_draft():
@@ -103,6 +104,13 @@ def empty_draft():
         'condition': 'unknown',
         'status': 'unknown',
         'responsible_party': '',
+        'connected_assets': [],
+        'connection_direction': 'outgoing',
+        'connection_type': 'other',
+        'connection_medium': 'other',
+        'interface': '',
+        'compatibility': 'unknown',
+        'connection_notes': '',
     }
 
 
@@ -128,13 +136,13 @@ def draft_from_asset(asset):
 @login_required
 def start_asset_creation(request):
     '''Start a new equipment draft and open its first step.'''
-    wizard_id = str(uuid.uuid4())
     draft = empty_draft()
     room_id = request.GET.get('room', '')
     if room_id:
         room = get_object_or_404(Room, pk=room_id)
         draft['room'] = str(room.pk)
-    store_draft(request, wizard_id, draft)
+    record = AssetDraft.objects.create(created_by=request.user, draft_data=draft)
+    wizard_id = str(record.pk)
     return redirect('inventory:asset_wizard_step', wizard_id=wizard_id, step=1)
 
 
@@ -142,8 +150,8 @@ def start_asset_creation(request):
 def start_asset_edit(request, pk):
     '''Start an edit draft from an existing equipment record.'''
     asset = get_object_or_404(Asset, pk=pk)
-    wizard_id = str(uuid.uuid4())
-    store_draft(request, wizard_id, draft_from_asset(asset))
+    record = AssetDraft.objects.create(created_by=request.user, draft_data=draft_from_asset(asset))
+    wizard_id = str(record.pk)
     return redirect('inventory:asset_wizard_step', wizard_id=wizard_id, step=1)
 
 
@@ -176,7 +184,7 @@ def render_step(request, wizard_id, step, draft, form):
 def asset_wizard_step(request, wizard_id, step):
     '''Display, validate, and navigate equipment draft steps.'''
     draft = get_draft_or_404(request, wizard_id)
-    if step == 6:
+    if step == 5:
         return redirect('inventory:asset_wizard_review', wizard_id=wizard_id)
     if step not in WIZARD_FORMS:
         raise Http404('Wizard step not found.')
@@ -186,7 +194,8 @@ def asset_wizard_step(request, wizard_id, step):
             step,
             request.POST,
             asset_pk=draft.get('asset_pk') or None,
-        ) if step == 3 else get_step_form(step, request.POST)
+            **({'category': draft.get('category')} if step == 3 else {}),
+        ) if step in (3, 4) else get_step_form(step, request.POST)
         action = request.POST.get('action', 'next')
 
         if action == 'save_draft':
@@ -211,7 +220,7 @@ def asset_wizard_step(request, wizard_id, step):
             next_step = step + 1
             draft['current_step'] = next_step
             store_draft(request, wizard_id, draft)
-            if next_step == 6:
+            if next_step == 5:
                 return redirect('inventory:asset_wizard_review', wizard_id=wizard_id)
             return redirect('inventory:asset_wizard_step', wizard_id=wizard_id, step=next_step)
     else:
@@ -219,7 +228,8 @@ def asset_wizard_step(request, wizard_id, step):
             step,
             initial=draft,
             asset_pk=draft.get('asset_pk') or None,
-        ) if step == 3 else get_step_form(step, initial=draft)
+            **({'category': draft.get('category')} if step == 3 else {}),
+        ) if step in (3, 4) else get_step_form(step, initial=draft)
 
     return render_step(request, wizard_id, step, draft, form)
 
@@ -228,8 +238,8 @@ def validate_complete_draft(draft):
     '''Validate all wizard sections before showing or saving the review.'''
     cleaned_values = {}
     for step, form_class in WIZARD_FORMS.items():
-        if step == 3:
-            form = form_class(data=draft, asset_pk=draft.get('asset_pk') or None)
+        if step in (3, 4):
+            form = form_class(data=draft, asset_pk=draft.get('asset_pk') or None, category=draft.get('category')) if step == 3 else form_class(data=draft, asset_pk=draft.get('asset_pk') or None)
         else:
             form = form_class(data=draft)
         if not form.is_valid():
@@ -241,6 +251,8 @@ def validate_complete_draft(draft):
 def make_preview_asset(draft, cleaned_values):
     '''Build an unsaved model instance to display the review summary.'''
     values = dict(cleaned_values)
+    for field_name in ('connected_assets', 'connection_direction', 'connection_type', 'connection_medium', 'interface', 'compatibility', 'connection_notes'):
+        values.pop(field_name, None)
     room = values.pop('room', None)
     asset = Asset(**values)
     if room:
@@ -265,22 +277,45 @@ def asset_wizard_review(request, wizard_id):
     room = Room.objects.filter(pk=cleaned_values['room'].pk).first() if cleaned_values['room'] else None
     if request.method == 'POST':
         if request.POST.get('action') == 'previous':
-            draft['current_step'] = 5
+            draft['current_step'] = 4
             store_draft(request, wizard_id, draft)
-            return redirect('inventory:asset_wizard_step', wizard_id=wizard_id, step=5)
+            return redirect('inventory:asset_wizard_step', wizard_id=wizard_id, step=4)
         if request.POST.get('action') == 'save':
-            if draft.get('asset_pk'):
-                asset = get_object_or_404(Asset, pk=draft['asset_pk'])
-                for field_name, value in cleaned_values.items():
-                    if field_name == 'room':
-                        asset.room = value
+            values = dict(cleaned_values)
+            selected_assets = values.pop('connected_assets', [])
+            connection_direction = values.pop('connection_direction', '') or 'outgoing'
+            connection_type = values.pop('connection_type', '')
+            connection_medium = values.pop('connection_medium', '')
+            interface = values.pop('interface', '')
+            compatibility = values.pop('compatibility', '')
+            connection_notes = values.pop('connection_notes', '')
+            try:
+                with transaction.atomic():
+                    if draft.get('asset_pk'):
+                        asset = get_object_or_404(Asset, pk=draft['asset_pk'])
+                        for field_name, value in values.items():
+                            setattr(asset, field_name, value)
+                        asset.save()
+                        saved_message = 'Equipment record updated.'
                     else:
-                        setattr(asset, field_name, value)
-                asset.save()
-                saved_message = 'Equipment record updated.'
-            else:
-                asset = Asset.objects.create(**cleaned_values)
-                saved_message = 'Equipment added to the inventory.'
+                        asset = Asset.objects.create(**values)
+                        saved_message = 'Equipment added to the inventory.'
+                    if selected_assets:
+                        AssetConnection.objects.bulk_create([
+                            AssetConnection(
+                                source=asset if connection_direction == 'outgoing' else related,
+                                destination=related if connection_direction == 'outgoing' else asset,
+                                connection_type=connection_type or 'other',
+                                connection_medium=connection_medium or 'other',
+                                interface=interface,
+                                compatibility=compatibility or 'unknown',
+                                notes=connection_notes,
+                            )
+                            for related in selected_assets
+                        ])
+            except IntegrityError:
+                messages.error(request, 'A duplicate inventory number or connection was found. Review the details and try again.')
+                return redirect('inventory:asset_wizard_step', wizard_id=wizard_id, step=4)
             delete_draft(request, wizard_id)
             messages.success(request, saved_message)
             return redirect('inventory:asset_detail', pk=asset.pk)
@@ -293,6 +328,7 @@ def asset_wizard_review(request, wizard_id):
             'draft': draft,
             'asset': asset,
             'room': room,
+            'connected_assets': cleaned_values.get('connected_assets', []),
             'is_edit': bool(draft.get('asset_pk')),
             'step_names': WIZARD_STEPS,
         },

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Equipment labels{% endblock %}
+
+{% block content %}
+<div class="label-page">
+    <div class="label-page-toolbar no-print">
+        <div>
+            <p class="eyebrow">EQUIPMENT IDENTIFICATION</p>
+            <h1>{% if labels %}{{ labels|length }} label{{ labels|length|pluralize }} prepared{% else %}No labels selected{% endif %}</h1>
+            <p class="lede">Use these compact layouts as a reference when entering each label on the Brother P-touch PT-D200.</p>
+        </div>
+        <div class="page-actions">
+            {% if labels %}<button class="button" type="button" onclick="window.print()">Print reference page</button>{% endif %}
+            <a class="button button-secondary" href="{% url 'inventory:asset_list' %}">Back to inventory</a>
+        </div>
+    </div>
+
+    {% if not labels %}
+        <section class="panel label-empty-state"><h2>Select equipment first</h2><p>Return to the inventory, select one or more equipment records, and choose <strong>Print selected labels</strong>.</p></section>
+    {% else %}
+        <div class="label-grid">
+            {% for label in labels %}
+                <article class="equipment-label" aria-label="Label reference for {{ label.asset.inventory_number }}">
+                    {% if label.heading %}<div class="equipment-label-heading">{{ label.heading }}</div>{% endif %}
+                    <div class="equipment-label-main">{{ label.label_name }} <span aria-hidden="true">|</span> <strong>{{ label.asset.inventory_number }}</strong></div>
+                    <div class="label-reference-name no-print">Full asset name: {{ label.asset.name }}</div>
+                </article>
+            {% endfor %}
+        </div>
+        <p class="label-print-note no-print">The browser prints this reference page only. Enter the two label lines on the PT-D200 and confirm the device preview before cutting tape.</p>
+    {% endif %}
+</div>
+{% endblock %}

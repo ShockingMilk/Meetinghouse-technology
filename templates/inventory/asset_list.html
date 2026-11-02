@@ -16,7 +16,7 @@
         {% for draft in drafts %}
         <div class="draft-row">
             <div><strong>{{ draft.name }}</strong><span>{% if draft.inventory_number %}{{ draft.inventory_number }} · {% endif %}{{ draft.step_name }}</span></div>
-            {% if draft.current_step == 6 %}
+            {% if draft.current_step == 5 %}
                 <a class="button button-small" href="{% url 'inventory:asset_wizard_review' draft.wizard_id %}">Resume review</a>
             {% else %}
                 <a class="button button-small" href="{% url 'inventory:asset_wizard_step' draft.wizard_id draft.current_step %}">Resume</a>
@@ -50,11 +50,15 @@
 </form>
 
 <div class="inventory-list-heading"><div><p class="eyebrow">BUILDING RECORDS</p><h2>Equipment inventory</h2><p>Search, filter, and open a record to review its details.</p></div><div class="list-summary"><strong>{{ result_count }}</strong><span>asset{{ result_count|pluralize }} found</span></div></div>
+<form method="post" action="{% url 'inventory:asset_labels' %}" class="label-selection-form">
+    {% csrf_token %}
+    <div class="label-selection-actions"><span>Select equipment for a combined label reference page.</span><button class="button button-small" type="submit">Print selected labels</button></div>
 <div class="table-container panel table-panel">
     <table>
         <caption class="sr-only">Equipment records matching the selected search and filters</caption>
         <thead>
             <tr>
+                <th scope="col"><span class="sr-only">Select</span></th>
                 <th>Inventory Number</th>
                 <th>Name</th>
                 <th>Category</th>
@@ -67,6 +71,7 @@
         <tbody>
             {% for asset in assets %}
                 <tr>
+                    <td><input class="asset-label-select" type="checkbox" name="asset_ids" value="{{ asset.pk }}" aria-label="Select {{ asset.inventory_number }} for label printing"></td>
                     <td>
                         <a class="record-link" href="{% url 'inventory:asset_detail' asset.pk %}">
                             {{ asset.inventory_number }}
@@ -81,10 +86,11 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="6" class="empty-state"><strong>No matching equipment</strong><span>Try a different search or clear the selected filters.</span></td>
+                    <td colspan="7" class="empty-state"><strong>No matching equipment</strong><span>Try a different search or clear the selected filters.</span></td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+</form>
 {% endblock %}

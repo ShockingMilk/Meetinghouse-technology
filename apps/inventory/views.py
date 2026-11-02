@@ -1,12 +1,15 @@
 '''Inventory views'''
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.conf import settings
 from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from .forms import RoomAssessmentForm
 from .models import (
     Asset,
+    AssetDraft,
     AssetCategory,
     AssetOwnership,
     Room,
@@ -41,20 +44,15 @@ def asset_list(request):
         assets = assets.filter(name__icontains=search) | assets.filter(inventory_number__icontains=search)
 
     drafts = []
-    for wizard_id, draft in request.session.get('inventory_wizard_drafts', {}).items():
+    step_names = {1: 'Room', 2: 'Category', 3: 'Equipment details', 4: 'Connections', 5: 'Review and save'}
+    for record in AssetDraft.objects.filter(created_by=request.user):
+        draft = record.draft_data
         drafts.append({
-            'wizard_id': wizard_id,
+            'wizard_id': record.pk,
             'name': draft.get('name') or 'New equipment',
             'inventory_number': draft.get('inventory_number', ''),
             'current_step': draft.get('current_step', 1),
-            'step_name': {
-                1: 'Room',
-                2: 'Category',
-                3: 'Equipment details',
-                4: 'Technical details',
-                5: 'Responsibility',
-                6: 'Review and save',
-            }.get(draft.get('current_step', 1), 'Room'),
+            'step_name': step_names.get(draft.get('current_step', 1), 'Room'),
         })
 
     return render(
@@ -183,11 +181,46 @@ def asset_detail(request, pk: int):
         ),
         pk=pk,
     )
-
     return render(
         request,
         'inventory/asset_detail.html',
         {
             'asset': asset,
         },
+    )
+
+
+@login_required
+def asset_label(request, pk: int):
+    """Render a print-friendly reference label for one asset."""
+    asset = get_object_or_404(Asset.objects.select_related('room'), pk=pk)
+    return render_label_page(request, [asset])
+
+
+@login_required
+@require_POST
+def asset_labels(request):
+    """Render labels for selected assets without changing their records."""
+    asset_ids = [value for value in request.POST.getlist('asset_ids') if value.isdigit()]
+    assets = list(Asset.objects.select_related('room').filter(pk__in=asset_ids).order_by('inventory_number'))
+    if not assets:
+        messages.info(request, 'Select at least one equipment item to prepare labels.')
+        return render_label_page(request, [], empty_selection=True)
+    return render_label_page(request, assets)
+
+
+def render_label_page(request, assets, *, empty_selection=False):
+    """Share print layout and label text between individual and batch views."""
+    labels = []
+    for asset in assets:
+        heading = asset.room.name if asset.room else settings.ASSET_LABEL_SITE_HEADING
+        heading = heading[:24].rstrip() + ('…' if len(heading) > 24 else '')
+        # Keep the device identifier intact while shortening unusually long names.
+        name_limit = max(8, 39 - len(asset.inventory_number))
+        label_name = asset.name if len(asset.name) <= name_limit else asset.name[:name_limit - 1].rstrip() + '…'
+        labels.append({'asset': asset, 'heading': heading, 'label_name': label_name})
+    return render(
+        request,
+        'inventory/asset_labels.html',
+        {'labels': labels, 'empty_selection': empty_selection},
     )

@@ -7,15 +7,15 @@ A Django application for documenting and supporting technology used in a meeting
 ## What is implemented
 
 - **Management dashboard** — counts total assets, active assets, and assets with ownership to verify.
-- **Technology inventory** — search by asset name or inventory number; filter by category and ownership.
+- **Technology inventory** — search by asset name or inventory number; filter by category and ownership; prepare individual or batch equipment label references.
 - **Room workspace** — review room priorities, assigned equipment, assessment history, and follow-up needs; add equipment directly to a room.
 - **Room assessments** — record dated, append-only condition snapshots for audio, video, network, printing, assistive listening, power, and overall room status.
-- **Equipment wizard** — add or edit equipment through six guided steps, save and resume an incomplete draft, add rooms in place, and confirm the complete record before saving.
+- **Equipment wizard** — add or edit equipment through five guided steps: room or unassigned location, category, details, existing equipment connections, and review. Drafts are stored privately for the signed-in user and do not appear as inventory until confirmed.
 - **Asset records** — view asset identity, location, status, connections, installed software, camera presets, and notes.
 - **Administration** — Django admin at `/admin/` for managing records.
 - **Training** — a starter page for audio, video/Zoom, printing, and assistive listening material.
 
-The application is an early POC. The equipment wizard and room assessment workflow cover core inventory operations; guided forms for connections, maintenance, software, camera presets, and broadcast workflows remain planned. See [docs/INVENTORY.md](docs/INVENTORY.md) for inventory guidance and [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for the staged roadmap.
+The application is an early POC. Room assessments and guided equipment entry cover core inventory operations. Maintenance, software, camera preset, and broadcast workflows remain planned. See [docs/INVENTORY.md](docs/INVENTORY.md) for inventory guidance and [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for the staged roadmap.
 
 ## Who can access each part
 
@@ -45,7 +45,7 @@ Here, “public network” means the building's public network; it does not mean
    docker compose up --build -d
    ```
 
-4. Check the migration state and generate the room-assessment migration:
+4. Check the migration state and generate migrations for model changes:
 
    ```sh
    sudo docker compose exec web python manage.py showmigrations inventory
@@ -55,13 +55,14 @@ Here, “public network” means the building's public network; it does not mean
    ```
 
    Migration `0002` contains the data-preserving model cleanup from the previous
-   phase. This phase adds `RoomAssessment`, which requires a new migration.
+   phase. `RoomAssessment` and persistent guided-entry drafts each require a
+   migration when not already present.
    Review the generated migration under `apps/inventory/migrations/`; keep
    existing migrations unchanged. If Django asks whether
    `local_managment_status` was renamed to `local_management_status`, confirm
    the rename so existing values are preserved.
 
-5. Once the checks pass and the migration looks correct, migrate and create an administrator:
+5. Once the checks pass and the migrations look correct, migrate and create an administrator:
 
    ```sh
    sudo docker compose exec web python manage.py migrate

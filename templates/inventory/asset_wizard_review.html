@@ -5,7 +5,7 @@
 {% block content %}
 <div class="breadcrumbs"><a href="{% url 'inventory:asset_list' %}">Inventory</a><span aria-hidden="true">/</span><span>Review equipment</span></div>
 <div class="wizard-heading">
-    <div><p class="eyebrow">{% if is_edit %}EDIT EQUIPMENT{% else %}NEW EQUIPMENT{% endif %} · STEP 6 OF 6</p>
+    <div><p class="eyebrow">{% if is_edit %}EDIT EQUIPMENT{% else %}NEW EQUIPMENT{% endif %} · STEP 5 OF 5</p>
     <h1>Review and save</h1>
     <p class="lede">Check the record below. Nothing is written to the inventory until you save it.</p></div>
 </div>
@@ -31,7 +31,7 @@
 </section>
 
 <section class="panel review-panel">
-    <div class="review-title"><div><p class="eyebrow">ACCOUNTABILITY</p><h2>Ownership and condition</h2></div><a class="edit-link" href="{% url 'inventory:asset_wizard_step' wizard_id 5 %}">Edit</a></div>
+    <div class="review-title"><div><p class="eyebrow">ACCOUNTABILITY</p><h2>Ownership and condition</h2></div><a class="edit-link" href="{% url 'inventory:asset_wizard_step' wizard_id 3 %}">Edit</a></div>
     <dl class="details-grid">
         <dt>Ownership</dt><dd>{{ asset.get_ownership_display }}</dd>
         <dt>Condition</dt><dd>{{ asset.get_condition_display }}</dd>
@@ -41,7 +41,7 @@
 </section>
 
 <section class="panel review-panel">
-    <div class="review-title"><div><p class="eyebrow">LIFECYCLE &amp; NOTES</p><h2>Technical details</h2></div><a class="edit-link" href="{% url 'inventory:asset_wizard_step' wizard_id 4 %}">Edit details</a></div>
+    <div class="review-title"><div><p class="eyebrow">LIFECYCLE &amp; NOTES</p><h2>Technical details</h2></div><a class="edit-link" href="{% url 'inventory:asset_wizard_step' wizard_id 3 %}">Edit details</a></div>
     <dl class="details-grid">
         <dt>Installed</dt><dd>{{ asset.installation_date|default:"Not recorded" }}</dd>
         <dt>Warranty ends</dt><dd>{{ asset.warranty_end_date|default:"Not recorded" }}</dd>
@@ -59,8 +59,13 @@
     </dl>
 </section>
 
+<section class="panel review-panel">
+    <div class="review-title"><div><p class="eyebrow">EQUIPMENT RELATIONSHIPS</p><h2>Connections</h2></div><a class="edit-link" href="{% url 'inventory:asset_wizard_step' wizard_id 4 %}">Edit connections</a></div>
+    {% if connected_assets %}<ul>{% for related in connected_assets %}<li>{{ related.inventory_number }} · {{ related.name }}</li>{% endfor %}</ul>{% else %}<p>No connections recorded.</p>{% endif %}
+</section>
+
 <div class="wizard-actions review-actions">
-    <form method="post" class="inline-action-form">{% csrf_token %}<button class="button button-secondary" name="action" value="previous">Back to responsibility</button></form>
+    <form method="post" class="inline-action-form">{% csrf_token %}<button class="button button-secondary" name="action" value="previous">Back to connections</button></form>
     <form method="post" class="inline-action-form">{% csrf_token %}<button class="button" name="action" value="save">{% if is_edit %}Save equipment changes{% else %}Confirm and save equipment{% endif %}</button></form>
 </div>
 <form class="cancel-draft-form" method="post" action="{% url 'inventory:asset_wizard_cancel' wizard_id %}">{% csrf_token %}<button class="text-button" type="submit">Discard this equipment draft</button></form>
