@@ -43,4 +43,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  meetinghouse_data:
+  meetinghouse_prod_data:
