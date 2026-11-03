@@ -42,6 +42,16 @@ class AssetStatus(models.TextChoices):
     PLANNED = 'planned', 'Planned'
     UNKNOWN = 'unknown', 'Unknown'
 
+
+class ReplacementRecommendation(models.TextChoices):
+    KEEP = 'keep', 'Keep in service'
+    MONITOR = 'monitor', 'Monitor'
+    REPAIR = 'repair', 'Repair'
+    BUDGET = 'budget', 'Replace when budget permits'
+    PRIORITY = 'priority', 'Replace as priority'
+    RETIRE = 'retire', 'Retire'
+    VERIFY = 'verify', 'Verify manufacturer information'
+
 class Asset(models.Model):
     '''A physical or logical technology asset in the building'''
 
@@ -162,6 +172,11 @@ class Asset(models.Model):
     )
 
     recommended_action = models.TextField(blank=True)
+    replacement_recommendation = models.CharField(
+        max_length=20,
+        choices=ReplacementRecommendation.choices,
+        blank=True,
+    )
     specification = models.TextField(blank=True)
     dependencies = models.TextField(blank=True)
     notes = models.TextField(blank=True)

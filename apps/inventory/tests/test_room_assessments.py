@@ -130,9 +130,8 @@ class RoomAssessmentViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        drafts = self.client.session["inventory_wizard_drafts"]
-        self.assertEqual(len(drafts), 1)
-        draft = next(iter(drafts.values()))
+        from apps.inventory.models import AssetDraft
+        draft = AssetDraft.objects.get(created_by=self.user).draft_data
         self.assertEqual(draft["room"], str(self.room.pk))
 
     def test_unassigned_inventory_filter_only_shows_unassigned_assets(self):

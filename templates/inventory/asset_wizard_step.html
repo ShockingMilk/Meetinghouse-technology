@@ -5,7 +5,7 @@
 {% block content %}
 <div class="breadcrumbs"><a href="{% url 'inventory:asset_list' %}">Inventory</a><span aria-hidden="true">/</span><span>{% if is_edit %}Edit equipment{% else %}Add equipment{% endif %}</span></div>
 <div class="wizard-heading">
-    <div><p class="eyebrow">{% if is_edit %}EDIT EQUIPMENT{% else %}NEW EQUIPMENT{% endif %} · STEP {{ step }} OF 6</p>
+    <div><p class="eyebrow">{% if is_edit %}EDIT EQUIPMENT{% else %}NEW EQUIPMENT{% endif %} · STEP {{ step }} OF 5</p>
     <h1>{{ step_name }}</h1>
     <p class="lede">Your changes stay in a draft until you review and save the equipment record.</p></div>
 </div>
@@ -26,11 +26,9 @@
     {% elif step == 2 %}
         <p class="form-intro">Choose the category that best describes this equipment.</p>
     {% elif step == 3 %}
-        <p class="form-intro">Add the identifying details available on the equipment label.</p>
+        <p class="form-intro">Add identifying, lifecycle, ownership, and technical details. Leave unknown information blank.</p>
     {% elif step == 4 %}
-        <p class="form-intro">These details help with lifecycle planning and troubleshooting. You can leave unknown items blank.</p>
-    {% elif step == 5 %}
-        <p class="form-intro">Record ownership and current condition. If ownership is uncertain, leave it as “Unknown — Verify Ownership.”</p>
+        <p class="form-intro">Optionally select existing equipment and describe how it connects. No credentials are collected.</p>
     {% endif %}
 
     <form method="post" class="wizard-form">
@@ -38,7 +36,7 @@
         {% if form.non_field_errors %}<div class="form-error-summary" role="alert">{{ form.non_field_errors }}</div>{% endif %}
         <div class="form-grid step-fields step-fields-{{ step }}{% if step == 2 %} category-grid{% endif %}">
             {% for field in form %}
-                <div class="form-field {% if field.errors %}has-error{% endif %}{% if step == 4 and field.field.widget.input_type == 'textarea' %} form-field-wide{% endif %}">
+                <div class="form-field {% if field.errors %}has-error{% endif %}{% if step >= 3 and field.field.widget.input_type == 'textarea' %} form-field-wide{% endif %}">
                     {% if field.field.widget.input_type == 'radio' %}
                         <fieldset><legend>{{ field.label }}{% if field.field.required %}<span class="required-mark">Required</span>{% endif %}</legend>{{ field }}</fieldset>
                     {% else %}
@@ -52,7 +50,7 @@
         <div class="wizard-actions">
             {% if step > 1 %}<button class="button button-secondary" type="submit" name="action" value="previous">Back</button>{% endif %}
             <button class="button button-secondary" type="submit" name="action" value="save_draft">Save draft</button>
-            <button class="button" type="submit" name="action" value="next">{% if step == 5 %}Review equipment{% else %}Continue{% endif %}<span aria-hidden="true">→</span></button>
+            <button class="button" type="submit" name="action" value="next">{% if step == 4 %}Review equipment{% else %}Continue{% endif %}<span aria-hidden="true">→</span></button>
         </div>
     </form>
 
@@ -65,7 +63,7 @@
     <section class="aside-card">
         <span class="aside-icon" aria-hidden="true">✓</span>
         <h2>Your progress is saved as a draft</h2>
-        <p>Continue saves each completed section. Use <strong>Save draft</strong> to pause with incomplete details.</p>
+        <p>Continue saves each completed section. Use <strong>Save draft</strong> to pause with incomplete details. Drafts are private to your account.</p>
         <p>The equipment record is added or changed only after you confirm it on the review page.</p>
     </section>
     <section class="aside-card aside-checklist">

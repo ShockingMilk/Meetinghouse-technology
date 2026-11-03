@@ -16,7 +16,13 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.training
 
+    volumes:
+      - training_publications:/app/data
+
     ports:
       - "${TRAINING_BIND_ADDRESS:-127.0.0.1}:${TRAINING_PORT:-8081}:8000"
 
     restart: unless-stopped
+
+volumes:
+  training_publications:

@@ -6,16 +6,19 @@ A Django application for documenting and supporting technology used in a meeting
 
 ## What is implemented
 
-- **Management dashboard** — counts total assets, active assets, and assets with ownership to verify.
-- **Technology inventory** — search by asset name or inventory number; filter by category and ownership.
+- **Management dashboard** — building inventory mix, room assessment coverage, attention priorities, maintenance queues, lifecycle planning, compatibility indicators, and recent activity.
+- **Building reports** — filtered and paginated inventory, room, maintenance, lifecycle, compatibility, and ownership reports with safe CSV export and print-friendly pages.
+- **Technology inventory** — search by asset name or inventory number; filter by category and ownership; prepare individual or batch equipment label references.
 - **Room workspace** — review room priorities, assigned equipment, assessment history, and follow-up needs; add equipment directly to a room.
 - **Room assessments** — record dated, append-only condition snapshots for audio, video, network, printing, assistive listening, power, and overall room status.
-- **Equipment wizard** — add or edit equipment through six guided steps, save and resume an incomplete draft, add rooms in place, and confirm the complete record before saving.
+- **Equipment wizard** — add or edit equipment through five guided steps: room or unassigned location, category, details, existing equipment connections, and review. Drafts are stored privately for the signed-in user and do not appear as inventory until confirmed.
+- **Maintenance and lifecycle** — log inspections and repairs, schedule recurring checks, track and resolve follow-ups, review support and end-of-life dates, plan replacements, and export filtered reports.
+- **Connections and compatibility** — map directional equipment connections and operational dependencies (including existing installed software or named external services), capture structured specifications and evidence, and review the impact of a proposed replacement without adding it to inventory.
 - **Asset records** — view asset identity, location, status, connections, installed software, camera presets, and notes.
 - **Administration** — Django admin at `/admin/` for managing records.
 - **Training** — a starter page for audio, video/Zoom, printing, and assistive listening material.
 
-The application is an early POC. The equipment wizard and room assessment workflow cover core inventory operations; guided forms for connections, maintenance, software, camera presets, and broadcast workflows remain planned. See [docs/INVENTORY.md](docs/INVENTORY.md) for inventory guidance and [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for the staged roadmap.
+The application is an early POC. Room assessments, guided equipment entry, maintenance, lifecycle planning, and relationship review cover core inventory operations. Software and broadcast workflow management remain planned. See [docs/INVENTORY.md](docs/INVENTORY.md) for inventory guidance and [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) for the staged roadmap.
 
 ## Who can access each part
 
@@ -45,7 +48,7 @@ Here, “public network” means the building's public network; it does not mean
    docker compose up --build -d
    ```
 
-4. Check the migration state and generate the room-assessment migration:
+4. Check the migration state and generate migrations for model changes:
 
    ```sh
    sudo docker compose exec web python manage.py showmigrations inventory
@@ -55,13 +58,14 @@ Here, “public network” means the building's public network; it does not mean
    ```
 
    Migration `0002` contains the data-preserving model cleanup from the previous
-   phase. This phase adds `RoomAssessment`, which requires a new migration.
+   phase. `RoomAssessment` and persistent guided-entry drafts each require a
+   migration when not already present.
    Review the generated migration under `apps/inventory/migrations/`; keep
    existing migrations unchanged. If Django asks whether
    `local_managment_status` was renamed to `local_management_status`, confirm
    the rename so existing values are preserved.
 
-5. Once the checks pass and the migration looks correct, migrate and create an administrator:
+5. Once the checks pass and the migrations look correct, migrate and create an administrator:
 
    ```sh
    sudo docker compose exec web python manage.py migrate
@@ -101,6 +105,30 @@ docker compose --env-file .env.training -f compose.training.yaml up --build -d
 Open <http://127.0.0.1:8081/training/>. The root address redirects to training. This deployment profile does not share the management database volume. Stop it with `docker compose --env-file .env.training -f compose.training.yaml down`.
 
 The training-only URL configuration serves only training routes; management, inventory, login, logout, and Django admin routes are not registered. The management production profile remains separate. Before deployment, configure each profile's allowed host names, TLS termination, and network bindings for the approved building network setup.
+
+To publish editor-managed guides to a separate training-only deployment, first
+apply migrations and provision the editor group on the management deployment:
+
+```sh
+sudo docker compose exec web python manage.py migrate
+sudo docker compose exec web python manage.py setup_training_permissions
+```
+
+After an authorized publisher has published guides, export and transfer the
+public catalog to the training host, then import it there:
+
+```sh
+sudo docker compose exec web python manage.py export_training_catalog
+sudo docker compose cp web:/app/data/training-catalog.json ./training-catalog.json
+# Securely transfer training-catalog.json to the training host.
+sudo docker compose -f compose.training.yaml cp ./training-catalog.json training:/app/data/training-catalog.json
+sudo docker compose -f compose.training.yaml exec training python manage.py migrate
+sudo docker compose -f compose.training.yaml exec training python manage.py import_training_catalog
+sudo docker compose -f compose.training.yaml restart training
+```
+
+See [docs/TRAINING.md](docs/TRAINING.md) for the review workflow, permissions,
+catalog transfer, authoring safety, and deployment details.
 
 The training-only profile hides management sign-in by default. To show a link
 from a training deployment intended for private-network use, set both

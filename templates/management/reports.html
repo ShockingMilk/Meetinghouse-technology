@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="page-heading report-heading"><div><p class="eyebrow">BUILDING TECHNOLOGY</p><h1>Reports</h1><p class="lede">Filter inventory, room, maintenance, lifecycle, compatibility, and ownership records.</p></div></div>
+
+<section class="panel report-filter-panel no-print">
+  <form method="get" class="report-filter-form">
+    <div class="report-filter-fields">{{ form.as_p }}</div>
+    <div class="report-actions"><button class="button" type="submit">Run report</button><a class="button button-secondary" href="{% url 'management:reports' %}">Reset filters</a></div>
+  </form>
+</section>
+
+<section class="panel report-results">
+  <div class="report-print-heading"><p class="eyebrow">MEETINGHOUSE TECHNOLOGY</p><h2>{{ report_title }}</h2><p>Generated {{ generated_at|date:"F j, Y · g:i A T" }}</p></div>
+  {% if applied_filters %}<div class="applied-filters"><strong>Applied filters:</strong> {% for label, value in applied_filters %}{{ label }}: {{ value }}{% if not forloop.last %} · {% endif %}{% endfor %}</div>{% else %}<p class="applied-filters">No filters applied.</p>{% endif %}
+  {% if coverage %}<p class="coverage-report-summary"><strong>{{ coverage.percent }}% room assessment coverage</strong> · {{ coverage.assessed }} assessed · {{ coverage.not_assessed }} not assessed · {{ coverage.unknown }} status unknown</p>{% endif %}
+  <div class="section-heading no-print"><div><p class="eyebrow">RESULTS</p><h2>{{ result_count }} record{{ result_count|pluralize }}</h2></div><a class="button button-secondary" href="?{{ query_without_page }}&amp;csv=1">Download CSV</a></div>
+  {% if rows %}<div class="table-scroll"><table class="data-table report-table"><thead><tr><th>Record</th>{% for header in headers %}<th>{{ header }}</th>{% endfor %}</tr></thead><tbody>
+  {% for row in rows %}<tr><th scope="row"><a href="{% url row.url row.pk %}">{{ row.primary }}</a></th>{% for cell in row.cells %}<td>{{ cell|default:"—" }}</td>{% endfor %}</tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="empty-state">No records match this report and filter set. Try adjusting the filters.</p>{% endif %}
+  {% if page.paginator.num_pages > 1 %}<nav class="pagination no-print" aria-label="Report pages"><span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span><div>{% if page.has_previous %}<a href="?{{ query_without_page }}&amp;page={{ page.previous_page_number }}">Previous</a>{% endif %}{% if page.has_next %}<a href="?{{ query_without_page }}&amp;page={{ page.next_page_number }}">Next</a>{% endif %}</div></nav>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}{% if is_edit %}Edit category{% else %}New category{% endif %}{% endblock %}
+{% block content %}
+<nav class="breadcrumbs"><a href="{% url 'training:manage_categories' %}">Categories</a><span>/</span><span>{% if is_edit %}{{ category.name }}{% else %}New category{% endif %}</span></nav>
+<section class="panel form-panel"><p class="eyebrow">TRAINING ORGANIZATION</p><h1>{% if is_edit %}Edit category{% else %}Create category{% endif %}</h1><form method="post">{% csrf_token %}{{ form.as_p }}<div class="form-actions"><button class="button" type="submit">Save category</button><a class="button button-secondary" href="{% url 'training:manage_categories' %}">Cancel</a></div></form></section>
+{% endblock %}

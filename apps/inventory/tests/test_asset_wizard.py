@@ -1,4 +1,4 @@
-'''Tests for the session-based equipment entry wizard.'''
+'''Tests for the persistent guided equipment entry wizard.'''
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
@@ -6,10 +6,12 @@ from django.urls import reverse
 
 from apps.inventory.models import (
     Asset,
+    AssetDraft,
     AssetCategory,
     AssetCondition,
     AssetOwnership,
     AssetStatus,
+    AssetConnection,
     Room,
     RoomPriority,
 )
@@ -31,23 +33,17 @@ class AssetWizardTests(TestCase):
     def begin_draft(self):
         response = self.client.get(reverse('inventory:asset_wizard_start'))
         self.assertEqual(response.status_code, 302)
-        drafts = self.client.session['inventory_wizard_drafts']
-        wizard_id = next(iter(drafts))
+        wizard_id = str(AssetDraft.objects.get(created_by=self.user).pk)
         return wizard_id
 
-    def complete_first_five_steps(self, wizard_id, *, name='PTZ Camera', number='VID-0001'):
-        steps = [
-            (1, {'room': str(self.room.pk)}),
-            (2, {'category': AssetCategory.VIDEO}),
-            (3, {
+    def complete_first_five_steps(self, wizard_id, *, name='PTZ Camera', number='VID-0001', connected_assets=None, room_value=None):
+        detail_fields = {
                 'inventory_number': number,
                 'name': name,
                 'manufacturer': 'Example Manufacturer',
                 'model_number': 'PTZ-1',
                 'serial_number': 'SERIAL-1',
                 'physical_location': 'Camera shelf',
-            }),
-            (4, {
                 'installation_date': '',
                 'warranty_end_date': '',
                 'end_of_life_date': '',
@@ -61,13 +57,16 @@ class AssetWizardTests(TestCase):
                 'specification': '',
                 'dependencies': '',
                 'notes': '',
-            }),
-            (5, {
                 'ownership': AssetOwnership.UNKNOWN,
                 'condition': AssetCondition.GOOD,
                 'status': AssetStatus.ACTIVE,
                 'responsible_party': 'Technology specialist',
-            }),
+            }
+        steps = [
+            (1, {'room': str(self.room.pk) if room_value is None else room_value}),
+            (2, {'category': AssetCategory.VIDEO}),
+            (3, detail_fields),
+            (4, {'connected_assets': [str(item.pk) for item in (connected_assets or [])]}),
         ]
         for step, fields in steps:
             fields['action'] = 'next'
@@ -92,7 +91,34 @@ class AssetWizardTests(TestCase):
         self.assertEqual(asset.name, 'PTZ Camera')
         self.assertEqual(asset.room, self.room)
         self.assertEqual(asset.category, AssetCategory.VIDEO)
-        self.assertNotIn(wizard_id, self.client.session['inventory_wizard_drafts'])
+        self.assertFalse(AssetDraft.objects.filter(pk=wizard_id).exists())
+
+    def test_existing_equipment_can_be_connected_on_save(self):
+        related = Asset.objects.create(inventory_number='NET-0001', name='Network switch')
+        wizard_id = self.begin_draft()
+        review_url = self.complete_first_five_steps(wizard_id, connected_assets=[related])
+        self.client.post(review_url, {'action': 'save'})
+        created = Asset.objects.get(inventory_number='VID-0001')
+        connection = AssetConnection.objects.get(source=created, destination=related)
+        self.assertEqual(connection.connection_type, 'other')
+
+    def test_equipment_can_be_saved_without_a_room(self):
+        wizard_id = self.begin_draft()
+        review_url = self.complete_first_five_steps(wizard_id, room_value='')
+        self.client.post(review_url, {'action': 'save'})
+        self.assertIsNone(Asset.objects.get(inventory_number='VID-0001').room)
+
+    def test_duplicate_inventory_number_is_rejected(self):
+        Asset.objects.create(inventory_number='VID-0001', name='Already recorded')
+        wizard_id = self.begin_draft()
+        self.client.post(reverse('inventory:asset_wizard_step', args=(wizard_id, 1)), {'room': '', 'action': 'next'})
+        self.client.post(reverse('inventory:asset_wizard_step', args=(wizard_id, 2)), {'category': AssetCategory.VIDEO, 'action': 'next'})
+        response = self.client.post(
+            reverse('inventory:asset_wizard_step', args=(wizard_id, 3)),
+            {'inventory_number': 'VID-0001', 'name': 'Duplicate attempt', 'action': 'next'},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Asset.objects.filter(inventory_number='VID-0001').count(), 1)
 
     def test_incomplete_step_can_be_saved_and_resumed(self):
         wizard_id = self.begin_draft()
@@ -133,7 +159,7 @@ class AssetWizardTests(TestCase):
         )
 
         new_room = Room.objects.get(name='Audio Rack')
-        draft = self.client.session['inventory_wizard_drafts'][wizard_id]
+        draft = AssetDraft.objects.get(pk=wizard_id).draft_data
         self.assertEqual(response.status_code, 302)
         self.assertEqual(draft['room'], str(new_room.pk))
         self.assertFalse(Asset.objects.exists())
@@ -147,7 +173,7 @@ class AssetWizardTests(TestCase):
         )
         response = self.client.get(reverse('inventory:asset_wizard_edit', args=(asset.pk,)))
         self.assertEqual(response.status_code, 302)
-        wizard_id = next(iter(self.client.session['inventory_wizard_drafts']))
+        wizard_id = str(AssetDraft.objects.get(created_by=self.user).pk)
 
         self.client.post(
             reverse('inventory:asset_wizard_step', args=(wizard_id, 1)),
@@ -166,22 +192,16 @@ class AssetWizardTests(TestCase):
                 'model_number': '',
                 'serial_number': '',
                 'physical_location': '',
-                'action': 'next',
-            },
-        )
-        self.client.post(
-            reverse('inventory:asset_wizard_step', args=(wizard_id, 4)),
-            {'action': 'next'},
-        )
-        self.client.post(
-            reverse('inventory:asset_wizard_step', args=(wizard_id, 5)),
-            {
                 'ownership': AssetOwnership.UNKNOWN,
                 'condition': AssetCondition.UNKNOWN,
                 'status': AssetStatus.UNKNOWN,
                 'responsible_party': '',
                 'action': 'next',
             },
+        )
+        self.client.post(
+            reverse('inventory:asset_wizard_step', args=(wizard_id, 4)),
+            {'action': 'next'},
         )
         review_url = reverse('inventory:asset_wizard_review', args=(wizard_id,))
         asset.refresh_from_db()
@@ -196,6 +216,14 @@ class AssetWizardTests(TestCase):
         response = self.client.get(reverse('inventory:asset_wizard_start'))
         self.assertEqual(response.status_code, 302)
         self.assertIn('/login/', response.url)
+
+    def test_draft_is_private_to_its_owner(self):
+        wizard_id = self.begin_draft()
+        other_user = get_user_model().objects.create_user(username='other-tech', password='test-password-43')
+        self.client.force_login(other_user)
+        response = self.client.get(reverse('inventory:asset_wizard_step', args=(wizard_id, 1)))
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(AssetDraft.objects.filter(pk=wizard_id, created_by=self.user).exists())
 
     @override_settings(ROOT_URLCONF='config.training_urls', TRAINING_ONLY=True)
     def test_training_only_profile_is_open_and_hides_management_routes(self):

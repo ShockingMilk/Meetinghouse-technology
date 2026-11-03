@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit maintenance record{% else %}Record maintenance{% endif %}{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'inventory:maintenance_dashboard' %}">Maintenance</a><span aria-hidden="true">/</span><span>{% if is_edit %}Edit record{% else %}New record{% endif %}</span></div>
+<div class="page-heading"><div><p class="eyebrow">MAINTENANCE HISTORY</p><h1>{% if is_edit %}Edit maintenance record{% else %}Record maintenance{% endif %}</h1><p class="lede">Record what was observed and what was done. This entry does not change equipment status or condition.</p></div></div>
+<form method="post" class="panel maintenance-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="form-error-summary" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-grid">{% for field in form %}<div class="form-field {% if field.errors %}has-error{% endif %}{% if field.name in 'description action_taken materials_used follow_up_notes' %}form-field-wide{% endif %}">
+        <div class="field-label-row">{{ field.label_tag }}{% if field.field.required %}<span class="required-mark">Required</span>{% endif %}</div>{{ field }}{% if field.help_text %}<span class="field-help">{{ field.help_text }}</span>{% endif %}{% if field.errors %}<div class="field-errors" role="alert">{{ field.errors }}</div>{% endif %}
+    </div>{% endfor %}</div>
+    <div class="wizard-actions"><a class="button button-secondary" href="{% if record %}{% url 'inventory:maintenance_record_detail' record.pk %}{% elif asset %}{% url 'inventory:asset_detail' asset.pk %}{% else %}{% url 'inventory:maintenance_dashboard' %}{% endif %}">Cancel</a><button class="button" type="submit">{% if is_edit %}Save changes{% else %}Save maintenance record{% endif %}</button></div>
+</form>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit inspection schedule{% else %}Add inspection schedule{% endif %}{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'inventory:maintenance_dashboard' %}">Maintenance</a><span aria-hidden="true">/</span><span>Inspection schedule</span></div>
+<div class="page-heading"><div><p class="eyebrow">RECURRING PLANNING</p><h1>{% if is_edit %}Manage inspection schedule{% else %}Add inspection schedule{% endif %}</h1><p class="lede">Schedules are reminders in the management workspace. They do not create maintenance records or change equipment status.</p></div></div>
+{% if asset and asset.ownership == 'FMG' %}<div class="message warning">FMG-owned equipment: use this schedule for observations or review dates unless the required authorization is in place.</div>{% endif %}
+<form method="post" class="panel maintenance-form">{% csrf_token %}{% if form.non_field_errors %}<div class="form-error-summary">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-grid">{% for field in form %}<div class="form-field{% if field.errors %} has-error{% endif %}{% if field.name in 'description notes' %} form-field-wide{% endif %}"><div class="field-label-row">{{ field.label_tag }}{% if field.field.required %}<span class="required-mark">Required</span>{% endif %}</div>{{ field }}{% if field.help_text %}<span class="field-help">{{ field.help_text }}</span>{% endif %}{% if field.errors %}<div class="field-errors" role="alert">{{ field.errors }}</div>{% endif %}</div>{% endfor %}</div>
+    {% if state %}<p class="form-intro">Current due date: <strong>{{ state.due_date|date:"M j, Y" }}</strong>. Last completion remains linked to its maintenance record.</p>{% endif %}
+    <div class="wizard-actions"><a class="button button-secondary" href="{% url 'inventory:maintenance_dashboard' %}">Cancel</a><button class="button" type="submit">{% if is_edit %}Save schedule{% else %}Create schedule{% endif %}</button></div>
+</form>
+{% endblock %}

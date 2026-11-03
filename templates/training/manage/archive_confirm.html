@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}Archive guide{% endblock %}
+{% block content %}
+<section class="panel confirm-panel"><p class="eyebrow">ARCHIVE GUIDE</p><h1>Archive “{{ guide.title }}”?</h1><p>Archiving removes the guide from public training and normal searches. Its published revisions remain available to authorized editors.</p><form method="post">{% csrf_token %}<label class="check-confirm"><input type="checkbox" name="confirm_archive" value="yes" required> Archive this guide.</label><div class="form-actions"><button class="button button-danger" type="submit">Archive guide</button><a class="button button-secondary" href="{% url 'training:manage_guide_edit' guide.pk %}">Cancel</a></div></form></section>
+{% endblock %}

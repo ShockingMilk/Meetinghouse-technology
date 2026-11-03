@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="breadcrumbs"><a href="{% url 'inventory:relationship_index' %}">Connections &amp; Compatibility</a><span>/</span><span>{{ title }}</span></div>
+<div class="page-heading"><div><p class="eyebrow">EQUIPMENT RELATIONSHIPS</p><h1>{{ title }}</h1>{% if asset %}<p class="lede">For {{ asset.inventory_number }} · {{ asset.name }}</p>{% endif %}</div></div>
+<form method="post" class="panel form-panel">{% csrf_token %}
+{% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+{% for field in form %}<div class="field {% if field.field.widget.input_type == 'checkbox' %}checkbox-field{% endif %}">{% if field.field.widget.input_type == 'checkbox' %}{{ field }}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{% else %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% endif %}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{% for error in field.errors %}<small class="field-error">{{ error }}</small>{% endfor %}</div>{% endfor %}
+<div class="form-actions"><button class="button" type="submit">Save</button><a class="button button-secondary" href="{% if asset %}{% url 'inventory:asset_detail' asset.pk %}{% else %}{% url 'inventory:relationship_index' %}{% endif %}">Cancel</a></div></form>
+{% endblock %}

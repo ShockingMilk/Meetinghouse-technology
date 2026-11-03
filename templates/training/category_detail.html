@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{% url 'training:index' %}">Training</a><span>/</span><span>{{ category.name }}</span></nav>
+<div class="page-heading"><div><p class="eyebrow">TRAINING CATEGORY</p><h1>{{ category.name }}</h1><p class="lede">{{ category.description }}</p></div></div>
+<section class="panel">{% if page.object_list %}<div class="training-guide-grid">{% for guide in page %}<article class="training-guide-card"><h2><a href="{% url 'training:guide_detail' guide.slug %}">{{ guide.published_revision.title }}</a></h2><p>{{ guide.published_revision.summary }}</p><small class="muted">Updated {{ guide.published_revision.published_at|date:"M j, Y" }}</small></article>{% endfor %}</div>{% else %}<p class="empty-state">There are no published guides in this category yet.</p>{% endif %}
+{% if page.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Category pages"><span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span><div>{% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">Previous</a>{% endif %}{% if page.has_next %}<a href="?page={{ page.next_page_number }}">Next</a>{% endif %}</div></nav>{% endif %}</section>
+{% endblock %}

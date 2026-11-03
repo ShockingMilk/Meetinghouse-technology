@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Guide revisions{% endblock %}
+{% block content %}
+<nav class="breadcrumbs"><a href="{% url 'training:manage_guides' %}">Training guides</a><span>/</span><a href="{% url 'training:manage_guide_edit' guide.pk %}">{{ guide.title }}</a><span>/</span><span>Revisions</span></nav>
+<div class="page-heading"><div><p class="eyebrow">PUBLICATION HISTORY</p><h1>{{ guide.title }} revisions</h1><p class="lede">Published revisions are immutable. Restoring one creates a new working copy.</p></div><a class="button" href="{% url 'training:manage_guide_edit' guide.pk %}">Edit working copy</a></div>
+{% if page.object_list %}<section class="panel"><div class="table-scroll"><table class="data-table"><thead><tr><th>Revision</th><th>Published</th><th>Title</th><th>Editor</th><th>Actions</th></tr></thead><tbody>{% for revision in page %}<tr><td>v{{ revision.revision_number }}{% if revision.pk == guide.published_revision_id %} <span class="status-pill">Current</span>{% endif %}</td><td>{{ revision.published_at|date:"M j, Y g:i A" }}</td><td>{{ revision.title }}</td><td>{{ revision.editor|default:"—" }}</td><td><a href="?compare={{ revision.pk }}">Compare with current</a>{% if perms.training.restore_trainingguide %}<form method="post" action="{% url 'training:manage_guide_restore' guide.pk revision.pk %}" class="inline-form">{% csrf_token %}<button type="submit" class="text-button">Restore to working copy</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% if page.paginator.num_pages > 1 %}<nav class="pagination"><span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span><div>{% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">Previous</a>{% endif %}{% if page.has_next %}<a href="?page={{ page.next_page_number }}">Next</a>{% endif %}</div></nav>{% endif %}</section>
+{% if diff_lines != None %}<section class="panel"><h2>Markdown difference</h2><p class="muted">Compare the selected revision with the current published revision.</p><pre class="revision-diff">{% for line in diff_lines %}{{ line }}
+{% endfor %}</pre></section>{% endif %}
+{% else %}<section class="panel"><p class="empty-state">No revisions have been published for this guide yet.</p></section>{% endif %}
+{% endblock %}

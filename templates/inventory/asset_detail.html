@@ -43,41 +43,44 @@
     </dl>
 </section>
 
-<section class="panel">
-    <h3>Outgoing Connections</h3>
-
-    <ul>
-        {% for connection in asset.outgoing_connections.all %}
-            <li>
-                {{ connection.get_connection_type_display }}
-                via
-                {{ connection.get_connection_medium_display }}
-                →
-                {{ connection.destination }}
-                ({{ connection.get_compatibility_display }})
-            </li>
-        {% empty %}
-            <li>No outgoing connections recorded.</li>
-        {% endfor %}
-    </ul>
+<section class="panel related-training-panel">
+    <div class="section-heading"><div><p class="eyebrow">TRAINING &amp; REFERENCE</p><h2>Guides for this equipment</h2></div><a class="text-link" href="{% url 'training:index' %}">Browse all guides →</a></div>
+    {% for guide in training_guides %}<article class="training-guide-list-row"><div><a href="{% url 'training:guide_detail' guide.slug %}"><strong>{{ guide.published_revision.title }}</strong></a><p>{{ guide.published_revision.summary }}</p></div><span class="muted">{{ guide.published_revision.category_name }}</span></article>{% empty %}<p class="empty-copy">No published training guides are linked to this equipment.</p>{% endfor %}
 </section>
 
-<section class="panel">
-    <h3>Incoming Connections</h3>
+<section class="panel lifecycle-detail-panel">
+    <div class="section-heading"><div><p class="eyebrow">LIFECYCLE PLANNING</p><h2>Support and replacement review</h2></div><div><a class="button button-secondary button-small" href="{% url 'inventory:replacement_review' asset.pk %}">Compatibility impact</a> <a class="button button-secondary button-small" href="{% url 'inventory:asset_wizard_edit' asset.pk %}">Update lifecycle details</a></div></div>
+    {% if lifecycle.missing_fields %}<p class="lifecycle-unknown-note">Some lifecycle dates are not recorded. Missing dates are unknown; they are not treated as expired.</p>{% endif %}
+    <div class="lifecycle-date-grid">{% for item in lifecycle.warnings %}<div class="lifecycle-date-card lifecycle-{{ item.state }}"><span>{{ item.label }}</span><strong>{% if item.date %}{{ item.date|date:"M j, Y" }}{% else %}Not recorded{% endif %}</strong><small>{% if item.state == 'approaching' %}Approaching within {{ lifecycle_warning_days }} days{% elif item.state == 'expired' %}Date has passed{% elif item.state == 'unknown' %}Needs verification{% else %}Current{% endif %}</small></div>{% endfor %}</div>
+    <dl class="details-grid lifecycle-detail-list"><dt>Installed</dt><dd>{{ asset.installation_date|date:"M j, Y"|default:"Not recorded" }}</dd><dt>Last tested</dt><dd>{{ asset.last_tested|date:"M j, Y"|default:"Not recorded" }}</dd><dt>Replacement estimate</dt><dd>{% if asset.replacement_estimate %}${{ asset.replacement_estimate }}{% else %}Not recorded{% endif %}</dd><dt>Recommendation</dt><dd>{{ asset.get_replacement_recommendation_display|default:"Not recorded" }}</dd><dt>Recommended action</dt><dd>{{ asset.recommended_action|default:"Not recorded"|linebreaksbr }}</dd></dl>
+</section>
 
-    <ul>
-        {% for connection in asset.incoming_connections.all %}
-            <li>
-                {{ connection.source }}
-                →
-                {{ connection.get_connection_type_display }}
-                via
-                {{ connection.get_connection_medium_display }}
-            </li>
-        {% empty %}
-            <li>No incoming connections recorded.</li>
-        {% endfor %}
-    </ul>
+<section class="panel maintenance-detail-panel">
+    <div class="section-heading"><div><p class="eyebrow">MAINTENANCE</p><h2>Inspection schedules</h2></div><a class="button button-secondary button-small" href="{% url 'inventory:maintenance_schedule_create_for_asset' asset.pk %}">Add schedule</a></div>
+    {% for item in schedule_items %}<div class="maintenance-list-row"><div><a href="{% url 'inventory:maintenance_schedule_edit' item.schedule.pk %}"><strong>{{ item.schedule.name }}</strong></a><span>{{ item.schedule.get_activity_type_display }} · Every {{ item.schedule.interval_months }} month{{ item.schedule.interval_months|pluralize }}</span></div><div class="maintenance-row-side"><span class="status-pill {% if item.state == 'overdue' %}status-review{% endif %}">{% if item.state == 'overdue' %}Overdue{% elif item.state == 'due_soon' %}Due soon{% elif item.state == 'disabled' %}Disabled{% else %}Upcoming{% endif %}</span>{% if item.due_date %}<span>Due {{ item.due_date|date:"M j, Y" }}</span>{% endif %}</div></div>{% empty %}<p class="empty-copy">No inspection schedule is assigned. Suggested intervals are not assigned automatically.</p>{% endfor %}
+</section>
+
+<section class="panel maintenance-detail-panel">
+    <div class="section-heading"><div><p class="eyebrow">SERVICE HISTORY</p><h2>Maintenance activity</h2></div><a class="button button-secondary button-small" href="{% url 'inventory:maintenance_record_create_for_asset' asset.pk %}">Record activity</a></div>
+    {% for record in asset.maintenance_history %}<div class="maintenance-list-row"><div><a href="{% url 'inventory:maintenance_record_detail' record.pk %}"><strong>{{ record.get_maintenance_type_display }} · {{ record.get_result_display }}</strong></a><span>{{ record.performed_at|date:"M j, Y" }}{% if record.performed_by %} · {{ record.performed_by }}{% endif %}</span></div><div class="maintenance-row-side">{% if record.follow_up_required %}<span class="status-pill {% if record.follow_up_state == 'overdue' %}status-review{% endif %}">{{ record.follow_up_state|title }}</span>{% endif %}</div></div>{% empty %}<p class="empty-copy">No maintenance has been recorded.</p>{% endfor %}
+</section>
+
+{% if video_workflows %}<section class="panel"><h3>Documented broadcast workflows</h3><p>These are saved workflow descriptions, not a confirmation that every link or format is compatible.</p>{% for workflow in video_workflows %}<article class="relationship-row"><div><strong>{{ workflow.name }}</strong><span>{{ workflow.get_mode_display }} · {% if workflow.is_active %}Active workflow{% else %}Reference workflow{% endif %}</span><small>Camera: <a href="{% url 'inventory:asset_detail' workflow.camera_id %}">{{ workflow.camera.inventory_number }}</a> → Transmitter: <a href="{% url 'inventory:asset_detail' workflow.transmitter_id %}">{{ workflow.transmitter.inventory_number }}</a> → Receiver: <a href="{% url 'inventory:asset_detail' workflow.receiver_id %}">{{ workflow.receiver.inventory_number }}</a> → Host: <a href="{% url 'inventory:asset_detail' workflow.computer_id %}">{{ workflow.computer.inventory_number }}</a>{% if workflow.obs_software %} · Software: {{ workflow.obs_software.name }}{% endif %}</small></div></article>{% endfor %}<p>Manage workflow records in <a href="/admin/inventory/videoworkflow/">Django Admin</a>.</p></section>{% endif %}
+
+<section class="panel relationship-detail-panel">
+    <div class="section-heading"><div><p class="eyebrow">EQUIPMENT RELATIONSHIPS</p><h2>Connections &amp; compatibility</h2></div><a class="button button-secondary button-small" href="{% url 'inventory:relationship_index' %}">Building relationship view</a></div>
+    {% if relationship_summary.unknown_required %}<p class="relationship-warning">One or more required dependencies have not been verified. Confirm before making changes to connected equipment.</p>{% endif %}
+    <div class="relationship-actions"><a href="{% url 'inventory:relationship_create_for_asset' 'connection' asset.pk %}">Add connection</a><a href="{% url 'inventory:relationship_create_for_asset' 'dependency' asset.pk %}">Add dependency</a><a href="{% url 'inventory:relationship_create_for_asset' 'specification' asset.pk %}">Add specification</a><a href="{% url 'inventory:relationship_create_for_asset' 'verification' asset.pk %}">Record compatibility check</a></div>
+    <div class="relationship-grid">
+        <div><h3>Outgoing connections</h3>{% for item in relationship_summary.outgoing_connections %}<p><span class="status-pill">{{ item.get_compatibility_display }}</span> {{ item.get_connection_type_display }} · {{ item.get_connection_medium_display }} → <a href="{% url 'inventory:asset_detail' item.destination_id %}">{{ item.destination.inventory_number }} · {{ item.destination.name }}</a><small>{% if item.is_required %}Required connection{% else %}Optional connection{% endif %}{% if item.interface %} · Interface: {{ item.interface }}{% endif %}{% if item.signal_description %} · {{ item.signal_description }}{% endif %}{% if item.last_verified %} · Verified {{ item.last_verified }}{% endif %}</small></p>{% empty %}<p class="empty-copy">No outgoing connections recorded.</p>{% endfor %}
+        <h3>Incoming connections</h3>{% for item in relationship_summary.incoming_connections %}<p><span class="status-pill">{{ item.get_compatibility_display }}</span> <a href="{% url 'inventory:asset_detail' item.source_id %}">{{ item.source.inventory_number }} · {{ item.source.name }}</a> → {{ item.get_connection_type_display }} · {{ item.get_connection_medium_display }}<small>{% if item.is_required %}Required connection{% else %}Optional connection{% endif %}{% if item.interface %} · Interface: {{ item.interface }}{% endif %}{% if item.signal_description %} · {{ item.signal_description }}{% endif %}{% if item.last_verified %} · Verified {{ item.last_verified }}{% endif %}</small></p>{% empty %}<p class="empty-copy">No incoming connections recorded.</p>{% endfor %}</div>
+        <div><h3>Dependencies</h3>{% for item in relationship_summary.requirements %}<p><span class="status-pill {% if item.verification_status != 'verified' %}status-review{% endif %}">{% if item.is_required %}Required{% else %}Optional{% endif %} · {{ item.get_verification_status_display }}</span> {% if item.required_asset %}<a href="{% url 'inventory:asset_detail' item.required_asset_id %}">{{ item.required_asset.inventory_number }} · {{ item.required_asset.name }}</a>{% elif item.required_software %}<a href="{% url 'inventory:asset_detail' item.required_software.host_asset_id %}">{{ item.required_software.name }} ({{ item.required_software.host_asset.inventory_number }})</a>{% else %}External service: {{ item.external_service_name }}{% endif %}<small>{{ item.description }}</small></p>{% empty %}<p class="empty-copy">No dependencies recorded.</p>{% endfor %}
+        <h3>Equipment that depends on this asset</h3>{% for item in relationship_summary.dependents %}<p><a href="{% url 'inventory:asset_detail' item.dependent_asset_id %}">{{ item.dependent_asset.inventory_number }} · {{ item.dependent_asset.name }}</a><small>{% if item.is_required %}Required{% else %}Optional{% endif %} · {{ item.get_verification_status_display }} · {{ item.description }}{% if item.required_software %} · Software: {{ item.required_software.name }}{% endif %}</small></p>{% empty %}<p class="empty-copy">No equipment depends on this asset.</p>{% endfor %}</div>
+    </div>
+    <h3>Technical specifications</h3>{% for item in relationship_summary.specifications %}<p><span class="status-pill {% if item.verification_status != 'verified' %}status-review{% endif %}">{{ item.get_verification_status_display }}</span> {{ item.get_category_display }} · {{ item.name }}: {{ item.value|default:'Unknown' }}{% if item.evidence_reference %} · <a href="{{ item.evidence_reference }}">Evidence</a>{% endif %}</p>{% empty %}<p class="empty-copy">No structured specifications recorded. Free-text details remain under asset information.</p>{% endfor %}
+    <h3>Compatibility verification history</h3>{% for item in asset.compatibility_verifications.all %}<p><span class="status-pill">{{ item.get_outcome_display }}</span> {{ item.requirement }} · {{ item.get_method_display }}{% if item.verified_on %} · {{ item.verified_on }}{% endif %}{% if item.evidence_reference %} · <a href="{{ item.evidence_reference }}">Evidence</a>{% endif %}{% if item.limitations %}<small>{{ item.limitations }}</small>{% endif %}</p>{% empty %}<p class="empty-copy">No verification history recorded. Unknown does not mean compatible.</p>{% endfor %}
+    {% if relationship_summary.transitive_impact %}<h3>Further equipment affected by this asset</h3><ul>{% for item in relationship_summary.transitive_impact %}<li><a href="{% url 'inventory:asset_detail' item.dependent_asset_id %}">{{ item.dependent_asset.inventory_number }} · {{ item.dependent_asset.name }}</a> depends on {{ item.required_asset.inventory_number }}</li>{% endfor %}</ul>{% endif %}
+    <p><a href="{% url 'inventory:replacement_review' asset.pk %}">Review replacement impact</a> · <a href="{% url 'inventory:relationship_index' %}">Search all building relationships</a></p>
 </section>
 
 <section class="panel">
@@ -149,6 +152,7 @@
 
 <div class="detail-actions">
     <a class="back-link" href="{% url 'inventory:asset_list' %}">← Back to inventory</a>
+    <a class="button button-secondary" href="{% url 'inventory:asset_label' asset.pk %}">Print label</a>
     <a class="button" href="{% url 'inventory:asset_wizard_edit' asset.pk %}">Edit equipment</a>
 </div>
 {% endblock %}
