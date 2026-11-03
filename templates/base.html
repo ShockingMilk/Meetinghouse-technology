@@ -49,10 +49,12 @@
             </a>
             <nav aria-label="Main navigation">
                 <a href="{% url 'training:index' %}" {% if request.resolver_match.namespace == 'training' %}aria-current="page"{% endif %}>Training guides</a>
-                {% if training_only %}
-                    {% if show_management_link and management_login_url %}<a href="{{ management_login_url }}">Management sign in</a>{% endif %}
-                {% else %}
-                    <a href="{% url 'login' %}">Management sign in</a>
+                {% if not training_only %}
+		    {% if show_management_link and management_login_url %}
+		        <a href="{{ management_login_url }}">Management sign in</a>
+		    {% else %}
+		        <a href="{% url 'login' %}">Management sign in</a>
+		    {% endif %}
                 {% endif %}
             </nav>
         </div>

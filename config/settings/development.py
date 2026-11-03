@@ -1,7 +1,13 @@
-'''Local workstation development settings'''
+"""Local workstation development settings."""
+
 from .base import *
 
+
 DEBUG = True
+
+INSTALLED_APPS += [
+    'apps.notifications',
+]
 
 ALLOWED_HOSTS = [
     'localhost',

@@ -4,15 +4,27 @@ from .base import *
 
 DEBUG = False
 
-ALLOWED_HOSTS = os.environ.get(
-    key='DJANGO_ALLOWED_HOSTS',
-    default='',
-).split(',')
+INSTALLED_APPS += [
+    'apps.notifications',
+]
 
-CSRF_TRUSTED_ORIGINS = os.environ.get(
-    key='DJANGO_CSRF_TRUSTED_ORIGINS',
-    default='',
-).split(',')
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get(
+        'DJANGO_ALLOWED_HOSTS',
+        '',
+    ).split(',')
+    if host.strip()
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        'DJANGO_CSRF_TRUSTED_ORIGINS',
+        '',
+    ).split(',')
+    if origin.strip()
+]
 
 SECURE_SSL_REDIRECT = os.environ.get(
     key='DJANGO_SECURE_SSL_REDIRECT',

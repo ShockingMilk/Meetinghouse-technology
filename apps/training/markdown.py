@@ -10,10 +10,10 @@ ALLOWED_TAGS = {
     'ul', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
 }
 ALLOWED_ATTRIBUTES = {
-    'a': ['href', 'title'],
-    'code': ['class'],
-    'th': ['align'],
-    'td': ['align'],
+    'a': {'href', 'title'},
+    'code': {'class'},
+    'th': {'align'},
+    'td': {'align'},
 }
 ALLOWED_PROTOCOLS = {'http', 'https', 'mailto'}
 

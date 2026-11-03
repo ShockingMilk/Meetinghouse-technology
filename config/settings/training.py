@@ -7,6 +7,14 @@ from .production import *
 ROOT_URLCONF = 'config.training_urls'
 TRAINING_ONLY = True
 
+# The public training deployment must not install management notifications.
+# It inherits production settings, so explicitly remove this application.
+INSTALLED_APPS = [
+    app
+    for app in INSTALLED_APPS
+    if app != 'apps.notifications'
+]
+
 # Training pages do not require authentication. The imported public catalog is
 # stored in this deployment's own database and never shares management data.
 DATABASES['default']['NAME'] = os.environ.get(

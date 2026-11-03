@@ -27,4 +27,4 @@ services:
     user: "${HOST_UID}:${HOST_GID}"
 
 volumes:
-  meetinghouse_dev_data:
+  meetinghouse_data:

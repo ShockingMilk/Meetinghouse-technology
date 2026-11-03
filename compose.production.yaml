@@ -19,7 +19,7 @@ services:
       DJANGO_SETTINGS_MODULE: config.settings.production
 
     volumes:
-      - meetinghouse_data:/app/data
+      - meetinghouse_prod_data:/app/data
 
     expose:
       - "8000"

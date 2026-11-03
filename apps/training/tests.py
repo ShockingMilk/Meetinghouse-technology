@@ -22,7 +22,13 @@ class TrainingGuideWorkflowTests(TestCase):
         User = get_user_model()
         self.author = User.objects.create_superuser(username='training-admin', email='training@example.invalid', password='long-safe-password')
         self.client.force_login(self.author)
-        self.category = TrainingCategory.objects.create(name='Audio Systems', slug='audio-systems', is_active=True)
+        self.category, _ = TrainingCategory.objects.get_or_create(
+            slug='audio-systems',
+            defaults={
+                'name': 'Audio Systems',
+                'is_active': True,
+            },
+        )
         self.guide = TrainingGuide.objects.create(
             title='Operate the sound system', slug='operate-sound-system',
             summary='Start and check room audio.', category=self.category,
@@ -36,7 +42,9 @@ class TrainingGuideWorkflowTests(TestCase):
         guide.review_date = timezone.localdate()
         guide.reviewer = self.author
         guide.save()
-        return publish_guide(guide, editor=self.author)
+        revision = publish_guide(guide, editor=self.author)
+        guide.refresh_from_db()
+        return revision
 
     def test_new_guide_is_draft_and_is_not_public(self):
         response = self.client.get(reverse('training:manage_guide_edit', args=(self.guide.pk,)))
@@ -127,7 +135,13 @@ class TrainingPublicAndSecurityTests(TestCase):
     def setUp(self):
         User = get_user_model()
         self.admin = User.objects.create_superuser(username='training-publisher', email='publisher@example.invalid', password='long-safe-password')
-        self.category = TrainingCategory.objects.create(name='Cameras and Zoom', slug='cameras-zoom', is_active=True)
+        self.category, _ = TrainingCategory.objects.get_or_create(
+            slug='cameras-zoom',
+            defaults={
+                'name': 'Cameras and Zoom',
+                'is_active': True,
+            },
+        )
         self.guide = TrainingGuide.objects.create(
             title='Camera quick start', slug='camera-quick-start', summary='Start a camera session.',
             content_markdown='# Camera steps\n\n1. Turn on the approved display.\n2. Select a preset.',
@@ -137,6 +151,7 @@ class TrainingPublicAndSecurityTests(TestCase):
         self.guide.review_date = timezone.localdate()
         self.guide.save()
         publish_guide(self.guide, editor=self.admin)
+        self.guide.refresh_from_db()
 
     def test_public_categories_search_and_related_guides(self):
         landing = self.client.get(reverse('training:index'))
@@ -175,6 +190,7 @@ class TrainingPublicAndSecurityTests(TestCase):
         self.guide.save()
         self.assertEqual(self.client.get(reverse('training:guide_detail', args=(self.guide.slug,))).status_code, 404)
 
+    @override_settings(ROOT_URLCONF='config.training_urls', TRAINING_ONLY=True)
     def test_training_only_urlconf_excludes_editor_admin_inventory_and_login(self):
         with override_settings(ROOT_URLCONF='config.training_urls'):
             for path in ('/training/manage/guides/', '/admin/', '/inventory/', '/login/'):
