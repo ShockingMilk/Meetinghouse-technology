@@ -28,16 +28,18 @@ class RoomSelectionForm(forms.Form):
         empty_label='Not assigned yet',
     )
 
-
-class RoomQuickAddForm(forms.ModelForm):
-    '''Add a room without leaving the equipment wizard.'''
+class RoomForm(forms.ModelForm):
+    '''Create or update a building room'''
 
     class Meta:
         model = Room
         fields = ('name', 'room_number', 'priority', 'description')
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 2}),
+                'description': forms.Textarea(attrs={'rows': 3}),
         }
+
+class RoomQuickAddForm(RoomForm):
+    '''Add a room without leaving the equipment wizard.'''
 
 
 class AssetCategoryForm(forms.Form):

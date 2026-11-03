@@ -7,13 +7,14 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import RoomAssessmentForm
+from .forms import RoomAssessmentForm, RoomForm
 from .models import (
     Asset,
     AssetDraft,
     AssetCategory,
     AssetOwnership,
     Room,
+    RoomPriority,
     RoomAssessment,
     MaintenanceRecord,
     MaintenanceSchedule,
@@ -125,6 +126,33 @@ def room_list(request):
         },
     )
 
+@login_required
+def room_create(request):
+    '''Create a building room outside the equipment wizard'''
+
+    if request.method == 'POST':
+        form = RoomForm(request.POST)
+
+        if form.is_valid():
+            room = form.save()
+            messages.success(
+                request,
+                f'{room.name} was added successfully.',
+            )
+            return redirect('inventory:room_detail', pk=room.pk)
+    else:
+        form = RoomForm(
+            initial={'priority': RoomPriority.UNKNOWN},
+        )
+
+    return render(
+        request,
+        'inventory/room_form.html',
+        {
+            'form': form,
+            'page_title': 'Add Room',
+        },
+    )
 
 @login_required
 def room_detail(request, pk: int):

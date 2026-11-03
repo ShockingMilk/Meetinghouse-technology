@@ -10,6 +10,7 @@
         <p class="lede">Building rooms, assigned technology, and the latest assessment for each area.</p>
     </div>
     <div class="page-actions">
+	<a class="button button-secondary" href="{% url 'inventory:room_create' %}">Add room <span aria-hidden="true">+</span></a>
         <a class="button button-secondary" href="{% url 'inventory:asset_list' %}?room=unassigned">Unassigned equipment <span class="action-count">{{ unassigned_asset_count }}</span></a>
         <a class="button" href="{% url 'inventory:asset_wizard_start' %}">Add equipment <span aria-hidden="true">＋</span></a>
     </div>
@@ -40,7 +41,7 @@
                 <td><a class="table-action" href="{% url 'inventory:room_detail' item.room.pk %}">View room <span aria-hidden="true">→</span></a></td>
             </tr>
         {% empty %}
-            <tr><td colspan="7" class="empty-state"><strong>No rooms have been added</strong><span>Add equipment and create the room during the first step, or use the equipment form to create rooms.</span><a class="button button-small" href="{% url 'inventory:asset_wizard_start' %}">Start an equipment record</a></td></tr>
+            <tr><td colspan="7" class="empty-state"><strong>No rooms have been added</strong><a class="button" href="{% url 'inventory:room_create' %}">Add your first room</a></td></tr>
         {% endfor %}
         </tbody>
     </table>
