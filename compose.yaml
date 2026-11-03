@@ -24,5 +24,7 @@ services:
 
     restart: unless-stopped
 
+    user: "${HOST_UID}:${HOST_GID}"
+
 volumes:
-  meetinghouse_data:
+  meetinghouse_dev_data:
