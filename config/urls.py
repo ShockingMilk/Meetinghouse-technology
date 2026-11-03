@@ -34,4 +34,9 @@ urlpatterns = [
         'training/',
         include('apps.training.urls'),
     ),
+
+    path(
+        'notifications/',
+        include('apps.notifications.urls'),
+    ),
 ]

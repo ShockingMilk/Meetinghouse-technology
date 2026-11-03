@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="breadcrumbs">
+            <a href="{% url 'management:dashboard' %}">Overview</a>
+            / Notifications
+        </p>
+        <h1>Operational notifications</h1>
+        <p>
+            Review active issues, maintenance reminders, and recorded
+            operational conditions.
+        </p>
+    </div>
+</div>
+
+<section class="panel filter-panel" aria-labelledby="notification-filters">
+    <h2 id="notification-filters">Filter notifications</h2>
+
+    <form method="get">
+        <div class="filter-grid">
+            <div>
+                <label for="notification-search">Search</label>
+                <input
+                    id="notification-search"
+                    type="search"
+                    name="q"
+                    value="{{ search_query }}"
+                    placeholder="Title, description, or source"
+                >
+            </div>
+
+            <div>
+                <label for="notification-status">Status</label>
+                <select id="notification-status" name="status">
+                    {% for value, label in status_choices %}
+                        <option
+                            value="{{ value }}"
+                            {% if selected_status == value %}selected{% endif %}
+                        >
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="notification-priority">Priority</label>
+                <select id="notification-priority" name="priority">
+                    <option value="">All priorities</option>
+                    {% for value, label in priority_choices %}
+                        <option
+                            value="{{ value }}"
+                            {% if selected_priority == value %}selected{% endif %}
+                        >
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="notification-category">Category</label>
+                <select id="notification-category" name="category">
+                    <option value="">All categories</option>
+                    {% for value, label in category_choices %}
+                        <option
+                            value="{{ value }}"
+                            {% if selected_category == value %}selected{% endif %}
+                        >
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit">Apply filters</button>
+            <a href="{% url 'notifications:list' %}">Clear filters</a>
+        </div>
+    </form>
+</section>
+
+<section class="panel table-panel">
+    <div class="section-heading">
+        <h2>Notification queue</h2>
+        <p>
+            {{ page_obj.paginator.count }}
+            notification{{ page_obj.paginator.count|pluralize }}
+            found
+        </p>
+    </div>
+
+    {% if notifications %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Notification</th>
+                        <th scope="col">Priority</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Assigned to</th>
+                        <th scope="col">Last detected</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for notification in notifications %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'notifications:detail' notification.pk %}">
+                                    <strong>{{ notification.title }}</strong>
+                                </a>
+                                {% if notification.source_summary %}
+                                    <p>{{ notification.source_summary }}</p>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="status-pill">
+                                    {{ notification.get_priority_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-pill">
+                                    {{ notification.get_status_display }}
+                                </span>
+                                {% if notification.is_snoozed %}
+                                    <p>Snoozed</p>
+                                {% endif %}
+                            </td>
+                            <td>{{ notification.get_category_display }}</td>
+                            <td>
+                                {% if notification.assigned_to %}
+                                    {{ notification.assigned_to.get_username }}
+                                {% else %}
+                                    Unassigned
+                                {% endif %}
+                            </td>
+                            <td>
+                                <time datetime="{{ notification.last_seen_at|date:'c' }}">
+                                    {{ notification.last_seen_at|date:"M j, Y g:i A" }}
+                                </time>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="pagination" aria-label="Notification pages">
+                {% if page_obj.has_previous %}
+                    <a href="?q={{ search_query|urlencode }}&status={{ selected_status|urlencode }}&priority={{ selected_priority|urlencode }}&category={{ selected_category|urlencode }}&page={{ page_obj.previous_page_number }}">
+                        Previous
+                    </a>
+                {% endif %}
+
+                <span>
+                    Page {{ page_obj.number }}
+                    of {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?q={{ search_query|urlencode }}&status={{ selected_status|urlencode }}&priority={{ selected_priority|urlencode }}&category={{ selected_category|urlencode }}&page={{ page_obj.next_page_number }}">
+                        Next
+                    </a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    {% else %}
+        <p>No notifications match the selected filters.</p>
+    {% endif %}
+</section>
+{% endblock %}

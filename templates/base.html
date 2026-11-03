@@ -28,6 +28,7 @@
                 <a href="{% url 'inventory:maintenance_dashboard' %}" {% if request.resolver_match.url_name|slice:":11" == 'maintenance' or request.resolver_match.url_name|slice:":9" == 'followups' or request.resolver_match.url_name == 'maintenance_reports' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">◷</span>Maintenance</a>
                 <a href="{% url 'inventory:relationship_index' %}" {% if request.resolver_match.url_name|slice:":12" == 'relationship' or request.resolver_match.url_name|slice:":18" == 'replacement_review' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">⤳</span>Compatibility</a>
                 {% if perms.training.view_trainingguide %}<a href="{% url 'training:manage_guides' %}" {% if request.resolver_match.namespace == 'training' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▱</span>Training guides</a>{% else %}<a href="{% url 'training:index' %}" {% if request.resolver_match.namespace == 'training' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▱</span>Training guides<span class="nav-external" aria-label="Available without sign-in">↗</span></a>{% endif %}
+		<a href="{% url 'notifications:list' %}" {% if request.resolver_match.namespace == 'notifications' %} aria-current="page" {% endif %}>Notifications</a>
             </nav>
             <div class="sidebar-bottom">
                 <div class="sidebar-account"><span class="avatar" aria-hidden="true">{{ user.get_short_name|default:user.username|slice:":1"|upper }}</span><span><strong>{{ user.get_short_name|default:user.username }}</strong><small>Management access</small></span></div>
@@ -36,7 +37,7 @@
         </aside>
         <div class="app-main">
             <header class="workspace-header">
-                <div><span class="workspace-kicker">MEETINGHOUSE TECHNOLOGY</span><strong>{% if request.resolver_match.namespace == 'inventory' %}Inventory workspace{% elif request.resolver_match.namespace == 'training' %}Training and reference{% else %}Management workspace{% endif %}</strong></div>
+		    <div><span class="workspace-kicker">MEETINGHOUSE TECHNOLOGY</span><strong>{% if request.resolver_match.namespace == 'inventory' %}Inventory workspace{% elif request.resolver_match.namespace == 'training' %}Training and reference{% elif request.resolver_match.namespace == 'notifications' %} Notifications workspace {% else %}Management workspace{% endif %}</strong></div>
                 <span class="access-badge"><span class="account-dot" aria-hidden="true"></span>Authorized access</span>
             </header>
             <main id="main-content">

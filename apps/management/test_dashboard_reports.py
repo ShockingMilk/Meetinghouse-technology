@@ -3,6 +3,7 @@
 from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase, override_settings
 from django.urls import Resolver404, reverse, resolve
 from django.utils import timezone
@@ -16,6 +17,12 @@ from apps.inventory.models import (
 )
 from apps.management.reporting import csv_safe
 from apps.management.services import building_dashboard
+from apps.notifications.models import (
+    Notification,
+    NotificationCategory,
+    NotificationPriority,
+    NotificationStatus,
+)
 
 
 class BuildingDashboardTests(TestCase):
@@ -102,6 +109,108 @@ class BuildingDashboardTests(TestCase):
         self.assertIn('Replacement review awaiting a decision', [item['label'] for item in summary['attention_items']])
         connection_alert = next(item for item in summary['attention_items'] if item['label'] == 'Incompatible equipment connection')
         self.assertEqual(connection_alert['priority'], 'medium')
+
+class NotificationDashboardViewTests(TestCase):
+    """Verify operational notifications on the authenticated dashboard."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username='notification-user',
+            password='safe-password',
+        )
+        self.content_type = ContentType.objects.get_for_model(
+            get_user_model(),
+        )
+
+    def create_notification(
+        self,
+        title,
+        *,
+        priority=NotificationPriority.MEDIUM,
+        status=NotificationStatus.OPEN,
+        snoozed_until=None,
+    ):
+        """Create a notification for dashboard integration tests."""
+        return Notification.objects.create(
+            title=title,
+            description=f'Test notification: {title}',
+            category=NotificationCategory.ASSET_OFFLINE,
+            priority=priority,
+            status=status,
+            source_content_type=self.content_type,
+            source_object_id='1',
+            source_summary='Dashboard test source',
+            deduplication_key=f'dashboard-test-{title.lower().replace(" ", "-")}',
+            snoozed_until=snoozed_until,
+        )
+
+    def test_dashboard_requires_authentication(self):
+        """Unauthenticated visitors cannot access the management dashboard."""
+        response = self.client.get(reverse('management:dashboard'))
+
+        self.assertEqual(response.status_code, 302)
+
+    def test_dashboard_displays_active_snoozed_and_excludes_resolved(self):
+        """The dashboard separates snoozed notifications from active ones."""
+
+        self.create_notification(
+            'Active offline equipment',
+            priority=NotificationPriority.HIGH,
+        )
+        self.create_notification(
+            'Acknowledged equipment issue',
+            status=NotificationStatus.ACKNOWLEDGED,
+        )
+        self.create_notification(
+            'Snoozed equipment issue',
+            snoozed_until=timezone.now() + timedelta(hours=2),
+        )
+        self.create_notification(
+            'Resolved equipment issue',
+            status=NotificationStatus.RESOLVED,
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('management:dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(response, 'Operational notifications')
+        self.assertContains(response, 'Active offline equipment')
+        self.assertContains(response, 'Acknowledged equipment issue')
+        self.assertContains(response, 'Snoozed notifications (1)')
+        self.assertContains(response, 'Snoozed equipment issue')
+
+        self.assertNotContains(response, 'Resolved equipment issue')
+
+    def test_dashboard_notification_counts_match_display_limits(self):
+        """Dashboard counts cover all records even when lists are limited."""
+        for number in range(9):
+            self.create_notification(f'Active issue {number:02d}')
+
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        self.create_notification(
+            'Snoozed issue',
+            snoozed_until=timezone.now() + timedelta(hours=2),
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('management:dashboard'))
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertContains(response, 'Showing 8 of 9')
+        self.assertContains(response, 'actionable notifications.')
+        self.assertContains(response, 'Snoozed notifications (1)')
+
+        self.assertContains(response, 'Active issue 08')
+        self.assertContains(response, 'Active issue 01')
+        self.assertNotContains(response, 'Active issue 00')
+
+        self.assertContains(response, 'Snoozed issue')
 
 
 class BuildingReportTests(TestCase):

@@ -9,11 +9,13 @@ from .forms import BuildingReportFilterForm
 from .reporting import REPORTS, csv_response, report_headers, report_queryset, report_rows
 from .services import building_dashboard
 from apps.inventory.services.maintenance import schedule_state
+from apps.notifications.services import notification_dashboard
 
 @login_required
 def dashboard(request):
     """Display the building-wide operational summary."""
     context = building_dashboard()
+    context.update(notification_dashboard())
     return render(request, 'management/dashboard.html', context)
 
 

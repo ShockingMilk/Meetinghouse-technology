@@ -13,6 +13,121 @@
   </ul>{% if attention_count > attention_items|length %}<p class="muted">Showing the highest priority {{ attention_items|length }} items. Use the linked inventory, maintenance, compatibility, and lifecycle reports for the full lists.</p>{% endif %}{% else %}<p class="empty-state">No current items require attention. Dashboard indicators are calculated from saved records.</p>{% endif %}
 </section>
 
+<section class="panel dashboard-notifications" aria-labelledby="notifications-heading">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">TRACKED WORK</p>
+      <h2 id="notifications-heading">Operational notifications</h2>
+    </div>
+    <span class="count-badge">{{ unresolved_count }}</span>
+    <a href="{% url 'notifications:list' %}">View all notifications</a>
+  </div>
+
+  {% if active_notifications %}
+    <ul class="attention-list">
+      {% for notification in active_notifications %}
+        <li class="priority-row priority-{{ notification.priority }}">
+          <span class="priority-label">{{ notification.get_priority_display }}</span>
+
+          <div>
+		  <a href="{% url 'notifications:detail' notification.pk %}"><strong>{{ notification.title }}</strong></a>
+
+            <small>
+              {{ notification.get_category_display }}
+              · {{ notification.get_status_display }}
+            </small>
+
+            {% if notification.asset %}
+              <small>
+                {% if notification.asset.inventory_number %}
+                  {{ notification.asset.inventory_number }} ·
+                {% endif %}
+                {{ notification.asset.name }}
+                {% if notification.asset.room %}
+                  · {{ notification.asset.room.name }}
+                {% endif %}
+              </small>
+            {% elif notification.source_summary %}
+              <small>{{ notification.source_summary }}</small>
+            {% endif %}
+
+            {% if notification.assigned_to %}
+              <small>Assigned to: {{ notification.assigned_to }}</small>
+            {% endif %}
+
+            <small>Last detected: {{ notification.last_seen_at|date:"M j, Y · g:i A" }}</small>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+
+    {% if actionable_count > active_notifications|length %}
+      <p class="muted">
+        Showing {{ active_notifications|length }} of {{ actionable_count }}
+        actionable notifications.
+      </p>
+    {% endif %}
+  {% elif snoozed_count %}
+    <p class="empty-state">
+      No notifications currently require action. Snoozed notifications are listed below.
+    </p>
+  {% else %}
+    <p class="empty-state">
+      No unresolved operational notifications. New tracked issues will appear here.
+    </p>
+  {% endif %}
+
+  {% if snoozed_count %}
+    <details class="snoozed-notifications">
+      <summary>
+        Snoozed notifications ({{ snoozed_count }})
+      </summary>
+
+      <ul class="attention-list">
+        {% for notification in snoozed_notifications %}
+          <li class="priority-row priority-{{ notification.priority }}">
+            <span class="priority-label">{{ notification.get_priority_display }}</span>
+
+            <div>
+		    <a href="{% url 'notifications:detail' notification.pk %}"><strong>{{ notification.title }}</strong></a>
+
+              <small>
+                {{ notification.get_category_display }}
+                · {{ notification.get_status_display }}
+              </small>
+
+              {% if notification.asset %}
+                <small>
+                  {% if notification.asset.inventory_number %}
+                    {{ notification.asset.inventory_number }} ·
+                  {% endif %}
+                  {{ notification.asset.name }}
+                  {% if notification.asset.room %}
+                    · {{ notification.asset.room.name }}
+                  {% endif %}
+                </small>
+              {% elif notification.source_summary %}
+                <small>{{ notification.source_summary }}</small>
+              {% endif %}
+
+              <small>
+                Snoozed until: {{ notification.snoozed_until|date:"M j, Y · g:i A" }}
+              </small>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+
+      {% if snoozed_count > snoozed_notifications|length %}
+        <p class="muted">
+          Showing {{ snoozed_notifications|length }} of {{ snoozed_count }}
+          snoozed notifications.
+        </p>
+      {% endif %}
+    </details>
+  {% endif %}
+</section>
+
 <div class="dashboard-grid dashboard-summary-grid">
   <section class="panel metric-card"><div class="metric-topline"><span class="metric-label">ACTIVE INVENTORY</span><span class="metric-icon" aria-hidden="true">▣</span></div><p class="metric">{{ active_asset_count }}</p><p class="metric-footnote">{{ asset_count }} non-retired documented assets</p><a href="{% url 'inventory:asset_list' %}">Browse inventory →</a></section>
   <section class="panel metric-card"><div class="metric-topline"><span class="metric-label">ROOM COVERAGE</span><span class="metric-icon" aria-hidden="true">▦</span></div><p class="metric">{{ coverage_percent }}%</p><p class="metric-footnote">{{ assessed_room_count }} assessed · {{ unassessed_room_count }} not assessed · {{ unknown_room_count }} status unknown</p><a href="{% url 'inventory:room_list' %}">Review rooms →</a></section>

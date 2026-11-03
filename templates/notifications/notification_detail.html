@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}{{ notification.title }}{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <p class="breadcrumbs">
+            <a href="{% url 'management:dashboard' %}">Overview</a>
+            /
+            <a href="{% url 'notifications:list' %}">Notifications</a>
+            / Details
+        </p>
+        <h1>{{ notification.title }}</h1>
+        <p>{{ notification.get_category_display }}</p>
+    </div>
+</div>
+
+<section class="panel">
+    <h2>Notification details</h2>
+
+    <dl class="details-grid">
+        <div>
+            <dt>Priority</dt>
+            <dd>{{ notification.get_priority_display }}</dd>
+        </div>
+        <div>
+            <dt>Status</dt>
+            <dd>{{ notification.get_status_display }}</dd>
+        </div>
+        <div>
+            <dt>Resolution mode</dt>
+            <dd>{{ notification.get_resolution_mode_display }}</dd>
+        </div>
+        <div>
+            <dt>Assigned to</dt>
+            <dd>
+                {% if notification.assigned_to %}
+                    {{ notification.assigned_to.get_username }}
+                {% else %}
+                    Unassigned
+                {% endif %}
+            </dd>
+        </div>
+        <div>
+            <dt>First detected</dt>
+            <dd>{{ notification.first_seen_at|date:"M j, Y g:i A" }}</dd>
+        </div>
+        <div>
+            <dt>Last detected</dt>
+            <dd>{{ notification.last_seen_at|date:"M j, Y g:i A" }}</dd>
+        </div>
+        <div>
+            <dt>Occurrences</dt>
+            <dd>{{ notification.occurrence_count }}</dd>
+        </div>
+        <div>
+            <dt>Condition</dt>
+            <dd>
+                {% if notification.condition_active %}
+                    Active
+                {% else %}
+                    Cleared
+                {% endif %}
+            </dd>
+        </div>
+        <div>
+            <dt>Source record</dt>
+            <dd>
+                {{ notification.source_summary|default:"No source summary recorded" }}
+                <small>
+                    {{ notification.source_content_type }}
+                    — {{ notification.source_object_id }}
+                </small>
+            </dd>
+        </div>
+        {% if notification.asset %}
+            <div>
+                <dt>Related asset</dt>
+                <dd>{{ notification.asset }}</dd>
+            </div>
+        {% endif %}
+        {% if notification.snoozed_until %}
+            <div>
+                <dt>Snoozed until</dt>
+                <dd>{{ notification.snoozed_until|date:"M j, Y g:i A" }}</dd>
+            </div>
+        {% endif %}
+        {% if notification.acknowledged_at %}
+            <div>
+                <dt>Acknowledged</dt>
+                <dd>{{ notification.acknowledged_at|date:"M j, Y g:i A" }}</dd>
+            </div>
+        {% endif %}
+        {% if notification.resolved_at %}
+            <div>
+                <dt>Resolved</dt>
+                <dd>{{ notification.resolved_at|date:"M j, Y g:i A" }}</dd>
+            </div>
+        {% endif %}
+    </dl>
+
+    <h3>Description</h3>
+    {% if notification.description %}
+        <p>{{ notification.description|linebreaksbr }}</p>
+    {% else %}
+        <p>No description recorded.</p>
+    {% endif %}
+</section>
+
+<section class="panel">
+    <h2>Investigation notes</h2>
+
+    {% if notes %}
+        {% for note in notes %}
+            <article>
+                <p>
+                    <strong>
+                        {{ note.author.get_username|default:"Former user or system" }}
+                    </strong>
+                    · {{ note.occurred_at|date:"M j, Y g:i A" }}
+                </p>
+                <p>{{ note.body|linebreaksbr }}</p>
+                <p>
+                    <small>
+                        Entered {{ note.created_at|date:"M j, Y g:i A" }}
+                        {% if note.updated_at != note.created_at %}
+                            · Edited {{ note.updated_at|date:"M j, Y g:i A" }}
+                        {% endif %}
+                    </small>
+                </p>
+            </article>
+        {% endfor %}
+    {% else %}
+        <p>No investigation notes have been recorded.</p>
+    {% endif %}
+</section>
+
+<section class="panel">
+    <h2>Note revision history</h2>
+
+    {% if revisions %}
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Revised</th>
+                        <th scope="col">Note</th>
+                        <th scope="col">Previous text</th>
+                        <th scope="col">Reason</th>
+                        <th scope="col">Revised by</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for revision in revisions %}
+                        <tr>
+                            <td>{{ revision.created_at|date:"M j, Y g:i A" }}</td>
+                            <td>{{ revision.note.pk }}</td>
+                            <td>{{ revision.previous_body|linebreaksbr }}</td>
+                            <td>{{ revision.revision_reason }}</td>
+                            <td>
+                                {{ revision.revised_by.get_username|default:"Former user or system" }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No note revisions have been recorded.</p>
+    {% endif %}
+</section>
+
+<section class="panel">
+    <h2>Event history</h2>
+
+    {% if events %}
+        <ol>
+            {% for event in events %}
+                <li>
+                    <p>
+                        <strong>{{ event.get_event_type_display }}</strong>
+                        · {{ event.created_at|date:"M j, Y g:i A" }}
+                    </p>
+                    {% if event.description %}
+                        <p>{{ event.description|linebreaksbr }}</p>
+                    {% endif %}
+                    <p>
+                        <small>
+                            Actor:
+                            {{ event.actor.get_username|default:"System or former user" }}
+                        </small>
+                    </p>
+                </li>
+            {% endfor %}
+        </ol>
+    {% else %}
+        <p>No events have been recorded.</p>
+    {% endif %}
+</section>
+
+<p>
+    <a href="{% url 'notifications:list' %}">Back to notifications</a>
+</p>
+{% endblock %}
