@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block title %}{{ notification.title }}{% endblock %}
@@ -15,6 +16,16 @@
         <p>{{ notification.get_category_display }}</p>
     </div>
 </div>
+
+{% if messages %}
+    <section aria-label="Notifications">
+        {% for message in messages %}
+            <div class="panel" role="status">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </section>
+{% endif %}
 
 <section class="panel">
     <h2>Notification details</h2>
@@ -74,24 +85,35 @@
                 </small>
             </dd>
         </div>
+
         {% if notification.asset %}
             <div>
                 <dt>Related asset</dt>
                 <dd>{{ notification.asset }}</dd>
             </div>
         {% endif %}
+
         {% if notification.snoozed_until %}
             <div>
-                <dt>Snoozed until</dt>
-                <dd>{{ notification.snoozed_until|date:"M j, Y g:i A" }}</dd>
+                <dt>Snooze expiration</dt>
+                <dd>
+                    {{ notification.snoozed_until|date:"M j, Y g:i A" }}
+                    {% if notification.is_snoozed %}
+                        — Currently snoozed
+                    {% else %}
+                        — Snooze period expired
+                    {% endif %}
+                </dd>
             </div>
         {% endif %}
+
         {% if notification.acknowledged_at %}
             <div>
                 <dt>Acknowledged</dt>
                 <dd>{{ notification.acknowledged_at|date:"M j, Y g:i A" }}</dd>
             </div>
         {% endif %}
+
         {% if notification.resolved_at %}
             <div>
                 <dt>Resolved</dt>
@@ -105,6 +127,181 @@
         <p>{{ notification.description|linebreaksbr }}</p>
     {% else %}
         <p>No description recorded.</p>
+    {% endif %}
+</section>
+
+<section class="panel">
+    <h2>Workflow actions</h2>
+
+    {% if notification.status == 'resolved' %}
+        <p>
+            This notification is resolved.
+            Its active workflow actions are unavailable.
+        </p>
+
+        <h3>Reopen notification</h3>
+        <p>
+            Reopen this notification if the issue has returned
+            or the previous resolution was premature.
+        </p>
+
+        <form
+            method="post"
+            action="{% url 'notifications:reopen' notification.pk %}"
+        >
+            {% csrf_token %}
+
+            <label for="reopen_reason">Reason for reopening</label>
+            <textarea
+                name="reason"
+                id="reopen_reason"
+                rows="3"
+                required
+            ></textarea>
+
+            <button type="submit">
+                Reopen notification
+            </button>
+        </form>
+    {% else %}
+        {% if notification.status == 'open' %}
+            <form
+                method="post"
+                action="{% url 'notifications:acknowledge' notification.pk %}"
+            >
+                {% csrf_token %}
+                <button type="submit">
+                    Acknowledge notification
+                </button>
+            </form>
+        {% elif notification.status == 'acknowledged' %}
+            <p>This notification has already been acknowledged.</p>
+        {% endif %}
+
+        <hr>
+
+        <h3>Snooze notification</h3>
+
+        {% if notification.is_snoozed %}
+            <p>
+                This notification is currently snoozed until
+                {{ notification.snoozed_until|date:"M j, Y g:i A" }}.
+            </p>
+
+            <form
+                method="post"
+                action="{% url 'notifications:unsnooze' notification.pk %}"
+            >
+                {% csrf_token %}
+                <button type="submit">
+                    Unsnooze notification
+                </button>
+            </form>
+        {% else %}
+            <p>
+                Temporarily snooze this notification until a selected
+                date and time. Its open or acknowledged status will
+                remain unchanged.
+            </p>
+
+            <form
+                method="post"
+                action="{% url 'notifications:snooze' notification.pk %}"
+            >
+                {% csrf_token %}
+
+                <label for="snoozed_until">Snooze until</label>
+                <input
+                    type="datetime-local"
+                    name="snoozed_until"
+                    id="snoozed_until"
+                    required
+                >
+
+                <button type="submit">
+                    Snooze notification
+                </button>
+            </form>
+        {% endif %}
+
+        <hr>
+
+        <h3>Manual resolution</h3>
+        <p>
+            Resolve this notification when the issue has been addressed.
+            Include a brief explanation of what was done.
+        </p>
+
+        <form
+            method="post"
+            action="{% url 'notifications:resolve' notification.pk %}"
+        >
+            {% csrf_token %}
+
+            <label for="resolution_note">Resolution explanation</label>
+            <textarea
+                name="resolution_note"
+                id="resolution_note"
+                rows="3"
+                required
+            ></textarea>
+
+            <button type="submit">
+                Resolve notification
+            </button>
+        </form>
+    {% endif %}
+
+    <hr>
+
+    <h3>Assignment</h3>
+
+    {% if notification.status != 'resolved' %}
+        <form
+            method="post"
+            action="{% url 'notifications:assign' notification.pk %}"
+        >
+            {% csrf_token %}
+
+            <label for="assignee_id">Assign to</label>
+            <select
+                name="assignee_id"
+                id="assignee_id"
+                required
+            >
+                <option value="">Select a user</option>
+
+                {% for user in assignable_users %}
+                    <option
+                        value="{{ user.pk }}"
+                        {% if notification.assigned_to_id == user.pk %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ user.get_username }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">
+                Save assignment
+            </button>
+        </form>
+
+        {% if notification.assigned_to %}
+            <form
+                method="post"
+                action="{% url 'notifications:assign' notification.pk %}"
+            >
+                {% csrf_token %}
+                <input type="hidden" name="assignee_id" value="">
+                <button type="submit">
+                    Unassign notification
+                </button>
+            </form>
+        {% endif %}
+    {% else %}
+        <p>Resolved notifications cannot be assigned.</p>
     {% endif %}
 </section>
 
@@ -182,9 +379,11 @@
                         <strong>{{ event.get_event_type_display }}</strong>
                         · {{ event.created_at|date:"M j, Y g:i A" }}
                     </p>
+
                     {% if event.description %}
                         <p>{{ event.description|linebreaksbr }}</p>
                     {% endif %}
+
                     <p>
                         <small>
                             Actor:
@@ -200,6 +399,8 @@
 </section>
 
 <p>
-    <a href="{% url 'notifications:list' %}">Back to notifications</a>
+    <a href="{% url 'notifications:list' %}">
+        Back to notifications
+    </a>
 </p>
 {% endblock %}

@@ -149,7 +149,7 @@ docker compose exec web python manage.py test
 docker compose down
 ```
 
-The development database is stored in the named Docker volume `meetinghouse_dev_data`. `docker compose down -v` deletes that volume and its database.
+The development database is stored in the named Docker volume `meetinghouse_data`. `docker compose down -v` deletes that volume and its database.
 
 ## Local Python setup (optional)
 

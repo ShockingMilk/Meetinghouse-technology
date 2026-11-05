@@ -22,13 +22,26 @@
             <p class="sidebar-label">WORKSPACE</p>
             <nav class="sidebar-nav" aria-label="Main navigation">
                 <a href="{% url 'management:dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▦</span>Overview</a>
-		<a href="{% url 'management:reports' %}" {% if request.resolver_match.url_name == 'reports' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▥</span>Reports</a>
+        		<a href="{% url 'management:reports' %}" {% if request.resolver_match.url_name == 'reports' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▥</span>Reports</a>
                 <a href="{% url 'inventory:asset_list' %}" {% if request.resolver_match.url_name == 'asset_list' or request.resolver_match.url_name == 'asset_detail' or request.resolver_match.url_name == 'asset_labels' or request.resolver_match.url_name == 'asset_label' or request.resolver_match.url_name == 'asset_wizard_start' or request.resolver_match.url_name == 'asset_wizard_step' or request.resolver_match.url_name == 'asset_wizard_review' or request.resolver_match.url_name == 'asset_wizard_cancel' or request.resolver_match.url_name == 'asset_wizard_edit' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▤</span>Inventory</a>
                 <a href="{% url 'inventory:room_list' %}" {% if request.resolver_match.url_name == 'room_list' or request.resolver_match.url_name == 'room_detail' or request.resolver_match.url_name == 'room_assessment_create' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▧</span>Rooms</a>
                 <a href="{% url 'inventory:maintenance_dashboard' %}" {% if request.resolver_match.url_name|slice:":11" == 'maintenance' or request.resolver_match.url_name|slice:":9" == 'followups' or request.resolver_match.url_name == 'maintenance_reports' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">◷</span>Maintenance</a>
                 <a href="{% url 'inventory:relationship_index' %}" {% if request.resolver_match.url_name|slice:":12" == 'relationship' or request.resolver_match.url_name|slice:":18" == 'replacement_review' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">⤳</span>Compatibility</a>
                 {% if perms.training.view_trainingguide %}<a href="{% url 'training:manage_guides' %}" {% if request.resolver_match.namespace == 'training' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▱</span>Training guides</a>{% else %}<a href="{% url 'training:index' %}" {% if request.resolver_match.namespace == 'training' %}aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">▱</span>Training guides<span class="nav-external" aria-label="Available without sign-in">↗</span></a>{% endif %}
-		<a href="{% url 'notifications:list' %}" {% if request.resolver_match.namespace == 'notifications' %} aria-current="page" {% endif %}>Notifications</a>
+        		<a href="{% url 'notifications:list' %}" {% if request.resolver_match.namespace == 'notifications' %}aria-current="page"{% endif %}>
+                    <svg class="nav-icon nav-icon-svg"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.7"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/>
+                        <path d="M10 21h4"/>
+                    </svg>
+                    Notifications
+                </a>
             </nav>
             <div class="sidebar-bottom">
                 <div class="sidebar-account"><span class="avatar" aria-hidden="true">{{ user.get_short_name|default:user.username|slice:":1"|upper }}</span><span><strong>{{ user.get_short_name|default:user.username }}</strong><small>Management access</small></span></div>
