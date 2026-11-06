@@ -3,13 +3,29 @@
 {% block title %}{{ page_title }}{% endblock %}
 
 {% block content %}
+<div class="breadcrumbs">
+    <a href="{% url 'inventory:room_list' %}">Rooms</a>
+    {% if room %}
+        <span aria-hidden="true">/</span>
+        <a href="{% url 'inventory:room_detail' room.pk %}">{{ room.name }}</a>
+    {% endif %}
+    <span aria-hidden="true">/</span>
+    <span>{% if is_edit %}Edit{% else %}Add{% endif %} room</span>
+</div>
+
 <div class="page-heading">
     <div>
         <p class="eyebrow">INVENTORY WORKSPACE</p>
         <h1>{{ page_title }}</h1>
         <p class="lede">
-            Add a room to the building inventory. You can assign equipment
-            and record assessments after creating it.
+            {% if is_edit %}
+                Update the room's identifying information and notes.
+                Existing equipment assignments and assessment history will
+                remain unchanged.
+            {% else %}
+                Add a room to the building inventory. You can assign
+                equipment and record assessments after creating it.
+            {% endif %}
         </p>
     </div>
 </div>
@@ -22,9 +38,12 @@
 
         <div class="form-fields">
             {% for field in form %}
-                <div class="form-field">
+                <div class="form-field{% if field.errors %} has-error{% endif %}">
                     <label for="{{ field.id_for_label }}">
                         {{ field.label }}
+                        {% if field.field.required %}
+                            <span class="required-mark">Required</span>
+                        {% endif %}
                     </label>
 
                     {{ field }}
@@ -42,11 +61,11 @@
 
         <div class="form-actions">
             <button type="submit" class="button">
-                Save room
+                {% if is_edit %}Save changes{% else %}Save room{% endif %}
             </button>
 
             <a class="button button-secondary"
-               href="{% url 'inventory:room_list' %}">
+               href="{% if room %}{% url 'inventory:room_detail' room.pk %}{% else %}{% url 'inventory:room_list' %}{% endif %}">
                 Cancel
             </a>
         </div>

@@ -6,7 +6,22 @@
 <div class="breadcrumbs"><a href="{% url 'inventory:room_list' %}">Rooms</a><span aria-hidden="true">/</span><span>{{ room.name }}</span></div>
 <div class="page-heading detail-heading">
     <div><p class="eyebrow">ROOM INVENTORY{% if room.room_number %} · ROOM {{ room.room_number }}{% endif %}</p><h1>{{ room.name }}</h1><p class="lede">{{ room.description|default:"Equipment, assessments, and follow-up for this room." }}</p></div>
-    <div class="page-actions"><a class="button button-secondary" href="{% url 'inventory:asset_wizard_start' %}?room={{ room.pk }}">Add equipment <span aria-hidden="true">＋</span></a><a class="button" href="{% url 'inventory:room_assessment_create' room.pk %}">New assessment <span aria-hidden="true">＋</span></a></div>
+    <div class="page-actions">
+        <a class="button button-secondary"
+        href="{% url 'inventory:room_edit' room.pk %}">
+            Edit room
+        </a>
+
+        <a class="button button-secondary"
+        href="{% url 'inventory:asset_wizard_start' %}?room={{ room.pk }}">
+            Add equipment <span aria-hidden="true">＋</span>
+        </a>
+
+        <a class="button"
+        href="{% url 'inventory:room_assessment_create' room.pk %}">
+            New assessment <span aria-hidden="true">＋</span>
+        </a>
+    </div>
 </div>
 
 <div class="room-detail-grid">
