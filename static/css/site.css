@@ -4037,3 +4037,79 @@ tbody tr:hover {
         align-items: stretch;
     }
 }
+
+
+/* Room assessment scope and guided review */
+.assessment-scope {
+    margin-top: 1rem;
+}
+
+.assessment-scope-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .7rem;
+    margin-top: .75rem;
+}
+
+.assessment-scope-item {
+    min-width: 0;
+    padding: .8rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--surface-soft);
+}
+
+.assessment-scope-item>strong {
+    display: block;
+    margin-bottom: .45rem;
+}
+
+.assessment-scope-item .assessment-notes {
+    margin: .55rem 0 0;
+    color: var(--muted);
+    font-size: .9rem;
+}
+
+.assessment-unassessed {
+    margin-top: .8rem;
+    padding: .7rem .85rem;
+    border: 1px dashed var(--line-strong);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: .9rem;
+}
+
+.assessment-scope-item .status-pill {
+    display: inline-block;
+}
+
+.room-assessment-form fieldset {
+    min-width: 0;
+}
+
+.room-assessment-form fieldset>legend {
+    font-weight: 700;
+}
+
+.room-assessment-form input[type="radio"],
+.room-assessment-form input[type="checkbox"] {
+    accent-color: var(--green);
+}
+
+.room-assessment-form ul {
+    display: grid;
+    gap: .45rem;
+    margin: .5rem 0;
+    padding-left: 0;
+    list-style: none;
+}
+
+.room-assessment-form .policy-reminder {
+    margin-top: 1.2rem;
+}
+
+@media (max-width: 600px) {
+    .assessment-scope-list {
+        grid-template-columns: 1fr;
+    }
+}

@@ -305,23 +305,36 @@ def room_detail(request, pk: int):
 
 @login_required
 def room_assessment_create(request, pk: int):
-    """Create an append-only technology assessment for a room."""
+    """Create an append-only full or focused room assessment."""
     room = get_object_or_404(Room, pk=pk)
+
     if request.method == "POST":
         form = RoomAssessmentForm(request.POST)
         if form.is_valid():
             assessment = form.save(commit=False)
             assessment.room = room
             assessment.save()
-            messages.success(request, f"Assessment saved for {room.name}.")
+
+            messages.success(
+                request,
+                f"Assessment saved for {room.name}.",
+            )
             return redirect("inventory:room_detail", pk=room.pk)
     else:
-        form = RoomAssessmentForm()
+        user = request.user
+        display_name = user.get_full_name().strip() or user.get_username()
+
+        form = RoomAssessmentForm(
+            initial={"assessed_by": display_name},
+        )
 
     return render(
         request,
         "inventory/room_assessment_form.html",
-        {"room": room, "form": form},
+        {
+            "room": room,
+            "form": form,
+        },
     )
 
 

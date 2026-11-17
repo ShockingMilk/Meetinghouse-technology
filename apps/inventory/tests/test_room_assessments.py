@@ -92,6 +92,132 @@ class RoomAssessmentViewTests(TestCase):
         self.assertContains(response, "Chapel sound system")
         self.assertContains(response, "System checked before Sunday services.")
 
+    def test_focused_assessment_saves_only_selected_areas(self):
+        self.client.force_login(self.user)
+
+        payload = {
+            "assessment_date": "2026-11-12",
+            "assessed_by": "Technology specialist",
+            "assessment_type": "focused",
+            "assessed_areas": ["audio", "video"],
+            "overall_status": AssessmentStatus.NEEDS_REVIEW,
+            "audio_status": AssessmentStatus.WORKING,
+            "audio_notes": "Microphones and speakers tested.",
+            "video_status": AssessmentStatus.NEEDS_REVIEW,
+            "video_notes": "Camera movement needs checking.",
+            "notes": "Focused assessment of the broadcast systems.",
+        }
+
+        response = self.client.post(
+            reverse("inventory:room_assessment_create", args=[self.room.pk]),
+            payload,
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("inventory:room_detail", args=[self.room.pk]),
+        )
+
+        assessment = RoomAssessment.objects.get()
+
+        self.assertEqual(assessment.assessment_type, "focused")
+        self.assertEqual(
+            set(assessment.assessed_areas),
+            {"audio", "video"},
+        )
+        self.assertEqual(
+            {value for value, label in assessment.unassessed_areas},
+            {
+                "network",
+                "printing",
+                "assistive_listening",
+                "power",
+            },
+        )
+
+    def test_focused_assessment_requires_at_least_one_area(self):
+        self.client.force_login(self.user)
+
+        payload = {
+            "assessment_date": "2026-11-12",
+            "assessed_by": "Technology specialist",
+            "assessment_type": "focused",
+            "assessed_areas": [],
+            "overall_status": AssessmentStatus.UNKNOWN,
+            "notes": "No areas selected.",
+        }
+
+        response = self.client.post(
+            reverse("inventory:room_assessment_create", args=[self.room.pk]),
+            payload,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(RoomAssessment.objects.exists())
+        self.assertContains(
+            response,
+            "Select at least one area",
+        )
+
+    def test_follow_up_requires_notes(self):
+        self.client.force_login(self.user)
+
+        payload = {
+            "assessment_date": "2026-11-12",
+            "assessed_by": "Technology specialist",
+            "assessment_type": "focused",
+            "assessed_areas": ["audio"],
+            "overall_status": AssessmentStatus.NEEDS_REVIEW,
+            "audio_status": AssessmentStatus.NEEDS_REVIEW,
+            "follow_up_required": "on",
+            "follow_up_notes": "",
+        }
+
+        response = self.client.post(
+            reverse("inventory:room_assessment_create", args=[self.room.pk]),
+            payload,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(RoomAssessment.objects.exists())
+        self.assertContains(
+            response,
+            "Enter the action needed",
+        )
+
+    def test_assessment_form_defaults_to_full_scope(self):
+        form = RoomAssessmentForm()
+
+        self.assertEqual(
+            form.fields["assessment_type"].initial,
+            "full",
+        )
+        self.assertEqual(
+            set(form.fields["assessed_areas"].initial),
+            {
+                "audio",
+                "video",
+                "network",
+                "printing",
+                "assistive_listening",
+                "power",
+            },
+        )
+
+    def test_assessment_form_rejects_focused_assessment_without_areas(self):
+        form = RoomAssessmentForm(
+            {
+                "assessment_date": "2026-11-12",
+                "assessed_by": "Technology specialist",
+                "assessment_type": "focused",
+                "assessed_areas": [],
+                "overall_status": AssessmentStatus.UNKNOWN,
+            }
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("assessed_areas", form.errors)
+
     def test_assessment_create_appends_history_to_room_from_url(self):
         self.client.force_login(self.user)
         payload = {
@@ -106,6 +232,15 @@ class RoomAssessmentViewTests(TestCase):
             "power_status": AssessmentStatus.WORKING,
             "follow_up_required": "on",
             "follow_up_notes": "Verify microphone battery.",
+            "assessment_type": "full",
+            "assessed_areas": [
+                "audio",
+                "video",
+                "network",
+                "printing",
+                "assistive_listening",
+                "power",
+            ],
         }
 
         response = self.client.post(
@@ -131,6 +266,7 @@ class RoomAssessmentViewTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         from apps.inventory.models import AssetDraft
+
         draft = AssetDraft.objects.get(created_by=self.user).draft_data
         self.assertEqual(draft["room"], str(self.room.pk))
 

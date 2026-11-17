@@ -16,6 +16,8 @@ from .models import (
     Room,
     RoomAssessment,
     RoomPriority,
+    RoomAssessmentType,
+    RoomAssessmentArea,
 )
 
 
@@ -233,7 +235,32 @@ class AssetConnectionsForm(forms.Form):
 
 
 class RoomAssessmentForm(forms.ModelForm):
-    """Create a historical assessment for one room."""
+    """Create a full or focused historical assessment for one room."""
+
+    assessment_type = forms.ChoiceField(
+        choices=RoomAssessmentType.choices,
+        initial=RoomAssessmentType.FULL,
+        widget=forms.RadioSelect,
+    )
+
+    assessed_areas = forms.MultipleChoiceField(
+        choices=RoomAssessmentArea.choices,
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label="Areas included in this assessment",
+    )
+
+    AREA_FIELDS = {
+        RoomAssessmentArea.AUDIO: ("audio_status", "audio_notes"),
+        RoomAssessmentArea.VIDEO: ("video_status", "video_notes"),
+        RoomAssessmentArea.NETWORK: ("network_status", "network_notes"),
+        RoomAssessmentArea.PRINTING: ("printing_status", "printing_notes"),
+        RoomAssessmentArea.ASSISTIVE_LISTENING: (
+            "assistive_listening_status",
+            "assistive_listening_notes",
+        ),
+        RoomAssessmentArea.POWER: ("power_status", "power_notes"),
+    }
 
     class Meta:
         model = RoomAssessment
@@ -268,6 +295,190 @@ class RoomAssessmentForm(forms.ModelForm):
             "notes": forms.Textarea(attrs={"rows": 4}),
             "follow_up_notes": forms.Textarea(attrs={"rows": 3}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        all_areas = list(RoomAssessmentArea.values)
+
+        if self.instance and self.instance.pk:
+            self.fields["assessment_type"].initial = self.instance.assessment_type
+            self.fields["assessed_areas"].initial = self.instance.assessed_areas or []
+        else:
+            self.fields["assessed_areas"].initial = all_areas
+
+        selected_areas = (
+            (
+                self.data.getlist("assessed_areas")
+                if hasattr(self.data, "getlist")
+                else self.data.get("assessed_areas", [])
+            )
+            if self.is_bound
+            else self.fields["assessed_areas"].initial
+        )
+
+        # Status fields are required only when their area is included.
+        for area, (status_field, notes_field) in self.AREA_FIELDS.items():
+            included = area in selected_areas
+            self.fields[status_field].required = included
+            self.fields[notes_field].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        assessment_type = cleaned_data.get("assessment_type")
+        assessed_areas = cleaned_data.get("assessed_areas") or []
+
+        if assessment_type == RoomAssessmentType.FULL:
+            cleaned_data["assessed_areas"] = list(RoomAssessmentArea.values)
+
+        elif assessment_type == RoomAssessmentType.FOCUSED:
+            if not assessed_areas:
+                self.add_error(
+                    "assessed_areas",
+                    "Select at least one area for a focused assessment.",
+                )
+
+        if (
+            cleaned_data.get("follow_up_required")
+            and not (cleaned_data.get("follow_up_notes") or "").strip()
+        ):
+            self.add_error(
+                "follow_up_notes",
+                "Enter the action needed when follow-up is required.",
+            )
+
+        for area, (status_field, notes_field) in self.AREA_FIELDS.items():
+            if area not in (cleaned_data.get("assessed_areas") or []):
+                continue
+
+            if not cleaned_data.get(status_field):
+                self.add_error(
+                    status_field,
+                    "Select a status for each area included in the assessment.",
+                )
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        assessment = super().save(commit=False)
+        assessment.assessment_type = self.cleaned_data["assessment_type"]
+        assessment.assessed_areas = self.cleaned_data["assessed_areas"]
+
+        if commit:
+            assessment.save()
+            self.save_m2m()
+
+        return assessment
+
+    class Meta:
+        model = RoomAssessment
+        fields = (
+            "assessment_date",
+            "assessed_by",
+            "overall_status",
+            "audio_status",
+            "audio_notes",
+            "video_status",
+            "video_notes",
+            "network_status",
+            "network_notes",
+            "printing_status",
+            "printing_notes",
+            "assistive_listening_status",
+            "assistive_listening_notes",
+            "power_status",
+            "power_notes",
+            "notes",
+            "follow_up_required",
+            "follow_up_notes",
+        )
+        widgets = {
+            "assessment_date": forms.DateInput(attrs={"type": "date"}),
+            "audio_notes": forms.Textarea(attrs={"rows": 3}),
+            "video_notes": forms.Textarea(attrs={"rows": 3}),
+            "network_notes": forms.Textarea(attrs={"rows": 3}),
+            "printing_notes": forms.Textarea(attrs={"rows": 3}),
+            "assistive_listening_notes": forms.Textarea(attrs={"rows": 3}),
+            "power_notes": forms.Textarea(attrs={"rows": 3}),
+            "notes": forms.Textarea(attrs={"rows": 4}),
+            "follow_up_notes": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        all_areas = list(RoomAssessmentArea.values)
+
+        if self.instance and self.instance.pk:
+            self.fields["assessment_type"].initial = self.instance.assessment_type
+            self.fields["assessed_areas"].initial = self.instance.assessed_areas or []
+        else:
+            self.fields["assessed_areas"].initial = all_areas
+
+        selected_areas = (
+            (
+                self.data.getlist("assessed_areas")
+                if hasattr(self.data, "getlist")
+                else self.data.get("assessed_areas", [])
+            )
+            if self.is_bound
+            else self.fields["assessed_areas"].initial
+        )
+
+        # Status fields are required only when their area is included.
+        for area, (status_field, notes_field) in self.AREA_FIELDS.items():
+            included = area in selected_areas
+            self.fields[status_field].required = included
+            self.fields[notes_field].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        assessment_type = cleaned_data.get("assessment_type")
+        assessed_areas = cleaned_data.get("assessed_areas") or []
+
+        if assessment_type == RoomAssessmentType.FULL:
+            cleaned_data["assessed_areas"] = list(RoomAssessmentArea.values)
+
+        elif assessment_type == RoomAssessmentType.FOCUSED:
+            if not assessed_areas:
+                self.add_error(
+                    "assessed_areas",
+                    "Select at least one area for a focused assessment.",
+                )
+
+        if (
+            cleaned_data.get("follow_up_required")
+            and not (cleaned_data.get("follow_up_notes") or "").strip()
+        ):
+            self.add_error(
+                "follow_up_notes",
+                "Enter the action needed when follow-up is required.",
+            )
+
+        for area, (status_field, notes_field) in self.AREA_FIELDS.items():
+            if area not in (cleaned_data.get("assessed_areas") or []):
+                continue
+
+            if not cleaned_data.get(status_field):
+                self.add_error(
+                    status_field,
+                    "Select a status for each area included in the assessment.",
+                )
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        assessment = super().save(commit=False)
+        assessment.assessment_type = self.cleaned_data["assessment_type"]
+        assessment.assessed_areas = self.cleaned_data["assessed_areas"]
+
+        if commit:
+            assessment.save()
+            self.save_m2m()
+
+        return assessment
 
 
 WIZARD_FORMS = {
