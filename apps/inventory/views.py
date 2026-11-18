@@ -3,7 +3,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -11,23 +11,23 @@ from django.views.decorators.http import require_POST
 from .forms import RoomAssessmentForm, RoomForm
 from .models import (
     Asset,
-    AssetDraft,
     AssetCategory,
-    AssetOwnership,
-    Room,
-    RoomPriority,
-    RoomAssessment,
-    MaintenanceRecord,
-    MaintenanceSchedule,
     AssetConnection,
     AssetDependency,
+    AssetDraft,
+    AssetOwnership,
+    ReplacementCompatibilityReview,
+    Room,
+    RoomAssessment,
+    RoomPriority,
+    MaintenanceRecord,
+    MaintenanceSchedule,
     VideoWorkflow,
 )
-from django.db.models import Q
+from .services.assessments import attach_assessment_comparisons
 from .services.lifecycle import lifecycle_warnings
 from .services.maintenance import follow_up_state, schedule_state
 from .services.relationships import relationship_impact, replacement_impact
-from .models import ReplacementCompatibilityReview
 
 
 @login_required
@@ -242,6 +242,7 @@ def room_detail(request, pk: int):
         pk=pk,
     )
     assessments = room.assessment_history
+    assessments = attach_assessment_comparisons(assessments)
     assets = list(room.assets.all())
     room_connections = (
         AssetConnection.objects.filter(Q(source__room=room) | Q(destination__room=room))

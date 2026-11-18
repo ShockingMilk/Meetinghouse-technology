@@ -22,7 +22,12 @@
     </div>
 </div>
 
-<form method="post" class="room-assessment-form">
+<form
+    method="post"
+    class="room-assessment-form"
+    id="room-assessment-form"
+    novalidate
+>
     {% csrf_token %}
 
     {% if form.non_field_errors %}
@@ -31,7 +36,16 @@
         </div>
     {% endif %}
 
-    <section class="panel assessment-form-panel">
+    <div class="assessment-wizard-progress" aria-live="polite">
+        <span id="assessment-step-label">Step 1 of 5</span>
+        <span id="assessment-step-title">Assessment details</span>
+    </div>
+
+    <!-- STEP 1: Assessment details and scope -->
+    <section
+        class="panel assessment-form-panel assessment-wizard-step"
+        data-wizard-step="1"
+    >
         <div class="section-heading">
             <div>
                 <p class="eyebrow">STEP 1 OF 5 · RECORD DETAILS</p>
@@ -53,6 +67,7 @@
             <fieldset>
                 <legend>{{ form.assessment_type.label }}</legend>
                 {{ form.assessment_type }}
+
                 {% if form.assessment_type.errors %}
                     <div class="field-errors" role="alert">
                         {{ form.assessment_type.errors }}
@@ -61,15 +76,17 @@
             </fieldset>
         </div>
 
-        <div class="form-field">
+        <div class="form-field" id="assessment-scope-field">
             <fieldset>
                 <legend>{{ form.assessed_areas.label }}</legend>
-                <p class="muted">
+                <p class="muted" id="assessment-scope-help">
                     A full assessment includes all six areas. For a focused
                     assessment, select only the areas you are examining.
-                    Unselected areas will be recorded as Not Assessed.
+                    Unselected areas will be recorded as not assessed.
                 </p>
+
                 {{ form.assessed_areas }}
+
                 {% if form.assessed_areas.errors %}
                     <div class="field-errors" role="alert">
                         {{ form.assessed_areas.errors }}
@@ -79,22 +96,37 @@
         </div>
     </section>
 
-    <section class="panel assessment-form-panel">
+    <!-- STEP 2: Audio and video -->
+    <section
+        class="panel assessment-form-panel assessment-wizard-step"
+        data-wizard-step="2"
+        hidden
+    >
         <div class="section-heading">
             <div>
                 <p class="eyebrow">STEP 2 OF 5 · AUDIO AND VIDEO</p>
                 <h2>Audio and video systems</h2>
+                <p class="lede">
+                    Record the condition of the room's audio and video systems
+                    if these areas are included in this assessment.
+                </p>
             </div>
         </div>
 
         <div class="assessment-form-grid">
-            <fieldset class="assessment-field-card">
+            <fieldset
+                class="assessment-field-card"
+                data-assessment-area="audio"
+            >
                 <legend>Audio</legend>
                 {% include "inventory/_form_field.html" with field=form.audio_status %}
                 {% include "inventory/_form_field.html" with field=form.audio_notes %}
             </fieldset>
 
-            <fieldset class="assessment-field-card">
+            <fieldset
+                class="assessment-field-card"
+                data-assessment-area="video"
+            >
                 <legend>Video</legend>
                 {% include "inventory/_form_field.html" with field=form.video_status %}
                 {% include "inventory/_form_field.html" with field=form.video_notes %}
@@ -102,22 +134,37 @@
         </div>
     </section>
 
-    <section class="panel assessment-form-panel">
+    <!-- STEP 3: Network and printing -->
+    <section
+        class="panel assessment-form-panel assessment-wizard-step"
+        data-wizard-step="3"
+        hidden
+    >
         <div class="section-heading">
             <div>
                 <p class="eyebrow">STEP 3 OF 5 · NETWORK AND PRINTING</p>
                 <h2>Network and printing systems</h2>
+                <p class="lede">
+                    Record the condition of network-dependent services and
+                    printing equipment if these areas are included.
+                </p>
             </div>
         </div>
 
         <div class="assessment-form-grid">
-            <fieldset class="assessment-field-card">
+            <fieldset
+                class="assessment-field-card"
+                data-assessment-area="network"
+            >
                 <legend>Network</legend>
                 {% include "inventory/_form_field.html" with field=form.network_status %}
                 {% include "inventory/_form_field.html" with field=form.network_notes %}
             </fieldset>
 
-            <fieldset class="assessment-field-card">
+            <fieldset
+                class="assessment-field-card"
+                data-assessment-area="printing"
+            >
                 <legend>Printing</legend>
                 {% include "inventory/_form_field.html" with field=form.printing_status %}
                 {% include "inventory/_form_field.html" with field=form.printing_notes %}
@@ -125,22 +172,39 @@
         </div>
     </section>
 
-    <section class="panel assessment-form-panel">
+    <!-- STEP 4: Assistive listening and power -->
+    <section
+        class="panel assessment-form-panel assessment-wizard-step"
+        data-wizard-step="4"
+        hidden
+    >
         <div class="section-heading">
             <div>
-                <p class="eyebrow">STEP 4 OF 5 · ASSISTIVE LISTENING AND POWER</p>
+                <p class="eyebrow">
+                    STEP 4 OF 5 · ASSISTIVE LISTENING AND POWER
+                </p>
                 <h2>Accessibility and power</h2>
+                <p class="lede">
+                    Record the condition of assistive listening and power
+                    systems if these areas are included.
+                </p>
             </div>
         </div>
 
         <div class="assessment-form-grid">
-            <fieldset class="assessment-field-card">
+            <fieldset
+                class="assessment-field-card"
+                data-assessment-area="assistive_listening"
+            >
                 <legend>Assistive listening</legend>
                 {% include "inventory/_form_field.html" with field=form.assistive_listening_status %}
                 {% include "inventory/_form_field.html" with field=form.assistive_listening_notes %}
             </fieldset>
 
-            <fieldset class="assessment-field-card">
+            <fieldset
+                class="assessment-field-card"
+                data-assessment-area="power"
+            >
                 <legend>Power</legend>
                 {% include "inventory/_form_field.html" with field=form.power_status %}
                 {% include "inventory/_form_field.html" with field=form.power_notes %}
@@ -148,15 +212,36 @@
         </div>
     </section>
 
-    <section class="panel assessment-form-panel">
+    <!-- STEP 5: Review and confirmation -->
+    <section
+        class="panel assessment-form-panel assessment-wizard-step"
+        data-wizard-step="5"
+        hidden
+    >
         <div class="section-heading">
             <div>
                 <p class="eyebrow">STEP 5 OF 5 · REVIEW AND CONFIRM</p>
-                <h2>Observations and follow-up</h2>
+                <h2>Review, observations, and follow-up</h2>
                 <p class="lede">
-                    Review the areas selected above. Confirm that the scope
-                    accurately reflects what you inspected before saving.
+                    Confirm which areas were assessed and which were
+                    intentionally left out before saving.
                 </p>
+            </div>
+        </div>
+
+        <div class="assessment-scope-review">
+            <div>
+                <h3>Included in this assessment</h3>
+                <ul id="assessment-review-included">
+                    <li>Loading selected areas…</li>
+                </ul>
+            </div>
+
+            <div>
+                <h3>Not assessed</h3>
+                <ul id="assessment-review-excluded">
+                    <li>Loading unselected areas…</li>
+                </ul>
             </div>
         </div>
 
@@ -187,19 +272,369 @@
             <strong>Before saving</strong>
             <p>
                 This assessment will be added to the room's history.
-                It will not overwrite previous assessments.
+                It will not overwrite previous assessments. Areas not
+                included in the assessment will remain explicitly
+                unassessed.
             </p>
+        </div>
+
+        <div class="form-field assessment-final-confirmation">
+            <label>
+                <input
+                    type="checkbox"
+                    id="assessment-final-confirmed"
+                    required
+                >
+                I have reviewed the assessment scope and the information
+                entered above.
+            </label>
         </div>
     </section>
 
-    <div class="wizard-actions">
+    <!-- Wizard navigation -->
+    <div class="wizard-actions assessment-wizard-actions">
         <a
             class="button button-secondary"
             href="{% url 'inventory:room_detail' room.pk %}"
+            id="assessment-cancel"
         >
             Cancel
         </a>
-        <button class="button" type="submit">Confirm and save assessment</button>
+
+        <span class="wizard-actions-spacer"></span>
+
+        <button
+            class="button button-secondary"
+            type="button"
+            id="assessment-back"
+            hidden
+        >
+            Back
+        </button>
+
+        <button
+            class="button"
+            type="button"
+            id="assessment-next"
+        >
+            Next
+        </button>
+
+        <button
+            class="button"
+            type="submit"
+            id="assessment-submit"
+            hidden
+        >
+            Confirm and save assessment
+        </button>
     </div>
 </form>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("room-assessment-form");
+
+    if (!form) {
+        return;
+    }
+
+    const steps = Array.from(
+        form.querySelectorAll(".assessment-wizard-step")
+    );
+
+    const stepLabel = document.getElementById("assessment-step-label");
+    const stepTitle = document.getElementById("assessment-step-title");
+
+    const backButton = document.getElementById("assessment-back");
+    const nextButton = document.getElementById("assessment-next");
+    const submitButton = document.getElementById("assessment-submit");
+
+    const includedList = document.getElementById(
+        "assessment-review-included"
+    );
+    const excludedList = document.getElementById(
+        "assessment-review-excluded"
+    );
+
+    const finalConfirmation = document.getElementById(
+        "assessment-final-confirmed"
+    );
+
+    const stepTitles = {
+        1: "Assessment details",
+        2: "Audio and video",
+        3: "Network and printing",
+        4: "Assistive listening and power",
+        5: "Review and confirmation"
+    };
+
+    const areaLabels = {
+        audio: "Audio",
+        video: "Video",
+        network: "Network",
+        printing: "Printing",
+        assistive_listening: "Assistive listening",
+        power: "Power"
+    };
+
+    let currentStep = 1;
+
+    const areaCards = Array.from(
+        form.querySelectorAll("[data-assessment-area]")
+    );
+
+    const areaCheckboxes = Array.from(
+        form.querySelectorAll(
+            'input[name="assessed_areas"][type="checkbox"]'
+        )
+    );
+
+    function selectedAssessmentType() {
+        const selected = form.querySelector(
+            'input[name="assessment_type"]:checked'
+        );
+
+        return selected ? selected.value.toLowerCase() : "full";
+    }
+
+    function isFullAssessment() {
+        return selectedAssessmentType() === "full";
+    }
+
+    function selectedAreaKeys() {
+        if (isFullAssessment()) {
+            return Object.keys(areaLabels);
+        }
+
+        return areaCheckboxes
+            .filter(function (checkbox) {
+                return checkbox.checked;
+            })
+            .map(function (checkbox) {
+                return checkbox.value.toLowerCase();
+            });
+    }
+
+    function updateScope() {
+        const fullAssessment = isFullAssessment();
+
+        if (fullAssessment) {
+            areaCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = true;
+            });
+        }
+
+        const selectedAreas = selectedAreaKeys();
+
+        areaCheckboxes.forEach(function (checkbox) {
+            checkbox.disabled = fullAssessment;
+        });
+
+        areaCards.forEach(function (card) {
+            const area = card.dataset.assessmentArea;
+            const included = selectedAreas.includes(area);
+
+            card.hidden = !included;
+
+            const statusField = card.querySelector(
+                '[name$="_status"]'
+            );
+
+            if (statusField) {
+                statusField.required = included;
+            }
+        });
+
+        updateScopeReview(selectedAreas);
+    }
+
+    function updateScopeReview(selectedAreas) {
+        includedList.replaceChildren();
+        excludedList.replaceChildren();
+
+        Object.entries(areaLabels).forEach(function ([key, label]) {
+            const item = document.createElement("li");
+            item.textContent = label;
+
+            if (selectedAreas.includes(key)) {
+                includedList.appendChild(item);
+            } else {
+                excludedList.appendChild(item);
+            }
+        });
+
+        if (includedList.children.length === 0) {
+            const item = document.createElement("li");
+            item.textContent = "No areas selected";
+            includedList.appendChild(item);
+        }
+
+        if (excludedList.children.length === 0) {
+            const item = document.createElement("li");
+            item.textContent = "All six areas are included";
+            excludedList.appendChild(item);
+        }
+    }
+
+    function showStep(stepNumber) {
+        currentStep = Math.min(
+            Math.max(stepNumber, 1),
+            steps.length
+        );
+
+        steps.forEach(function (step) {
+            const stepIsActive =
+                Number(step.dataset.wizardStep) === currentStep;
+
+            step.hidden = !stepIsActive;
+        });
+
+        stepLabel.textContent =
+            "Step " + currentStep + " of " + steps.length;
+
+        stepTitle.textContent = stepTitles[currentStep];
+
+        backButton.hidden = currentStep === 1;
+        nextButton.hidden = currentStep === steps.length;
+        submitButton.hidden = currentStep !== steps.length;
+
+        if (currentStep === steps.length) {
+            updateScope(selectedAreaKeys());
+        }
+
+        window.scrollTo({
+            top: form.getBoundingClientRect().top + window.scrollY - 24,
+            behavior: "smooth"
+        });
+    }
+
+    function stepHasErrors(step) {
+        return Boolean(
+            step.querySelector(
+                ".field-errors, .form-error-summary"
+            )
+        );
+    }
+
+    function validateCurrentStep() {
+        const activeStep = steps.find(function (step) {
+            return Number(step.dataset.wizardStep) === currentStep;
+        });
+
+        if (!activeStep) {
+            return true;
+        }
+
+        const fields = Array.from(
+            activeStep.querySelectorAll(
+                "input, select, textarea"
+            )
+        ).filter(function (field) {
+            return (
+                !field.disabled &&
+                field.type !== "hidden" &&
+                field.type !== "checkbox" &&
+                field.type !== "radio"
+            );
+        });
+
+        for (const field of fields) {
+            if (!field.checkValidity()) {
+                field.reportValidity();
+                return false;
+            }
+        }
+
+        if (currentStep === 1 && !isFullAssessment()) {
+            if (selectedAreaKeys().length === 0) {
+                const scopeField = document.getElementById(
+                    "assessment-scope-field"
+                );
+
+                scopeField.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+                window.alert(
+                    "Select at least one area for a focused assessment."
+                );
+
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    areaCheckboxes.forEach(function (checkbox) {
+        checkbox.addEventListener("change", function () {
+            if (isFullAssessment()) {
+                checkbox.checked = true;
+            }
+
+            updateScope();
+        });
+    });
+
+    form.querySelectorAll(
+        'input[name="assessment_type"]'
+    ).forEach(function (radio) {
+        radio.addEventListener("change", updateScope);
+    });
+
+    backButton.addEventListener("click", function () {
+        showStep(currentStep - 1);
+    });
+
+    nextButton.addEventListener("click", function () {
+        if (!validateCurrentStep()) {
+            return;
+        }
+
+        showStep(currentStep + 1);
+    });
+
+    form.addEventListener("submit", function (event) {
+        updateScope();
+
+        if (currentStep !== steps.length) {
+            event.preventDefault();
+            showStep(steps.length);
+            return;
+        }
+
+        if (!validateCurrentStep()) {
+            event.preventDefault();
+            return;
+        }
+
+        if (
+            finalConfirmation &&
+            !finalConfirmation.checked
+        ) {
+            event.preventDefault();
+            finalConfirmation.reportValidity();
+            return;
+        }
+    });
+
+    /*
+     * If Django returned the form with validation errors, open the
+     * first wizard step containing an error so the user can correct it.
+     */
+    const firstErrorStep = steps.find(function (step) {
+        return stepHasErrors(step);
+    });
+
+    updateScope();
+
+    if (firstErrorStep) {
+        showStep(Number(firstErrorStep.dataset.wizardStep));
+    } else {
+        showStep(1);
+    }
+});
+</script>
 {% endblock %}

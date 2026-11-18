@@ -4113,3 +4113,75 @@ tbody tr:hover {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* Guided room assessment wizard */
+.assessment-wizard-step[hidden],
+.assessment-wizard-actions [hidden],
+.assessment-field-card[hidden] {
+    display: none !important;
+}
+
+.assessment-wizard-progress {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    background: var(--surface-muted, #f1f4f8);
+}
+
+.assessment-wizard-progress span:first-child {
+    font-weight: 700;
+}
+
+.assessment-wizard-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.wizard-actions-spacer {
+    flex: 1;
+}
+
+.assessment-comparison {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-left: 3px solid var(--green, #3769bd);
+    background: var(--surface-muted, #f1f4f8);
+    border-radius: 0.25rem;
+}
+
+.assessment-comparison h4 {
+    margin-top: 0;
+}
+
+.assessment-comparison-list {
+    margin-bottom: 0;
+}
+
+.comparison-changed,
+.comparison-unchanged {
+    display: inline-block;
+    margin-left: 0.4rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.comparison-changed {
+    color: var(--warning, #9a5b00);
+}
+
+.comparison-unchanged {
+    color: var(--text-muted, #64748b);
+}
+
+.assessment-comparison-empty {
+    color: var(--text-muted, #64748b);
+    font-size: 0.9rem;
+}

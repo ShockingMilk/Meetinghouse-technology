@@ -239,14 +239,15 @@ class RoomAssessmentForm(forms.ModelForm):
 
     assessment_type = forms.ChoiceField(
         choices=RoomAssessmentType.choices,
-        initial=RoomAssessmentType.FULL,
         widget=forms.RadioSelect,
+        initial=RoomAssessmentType.FULL,
+        label="Assessment type",
     )
 
     assessed_areas = forms.MultipleChoiceField(
         choices=RoomAssessmentArea.choices,
-        required=False,
         widget=forms.CheckboxSelectMultiple,
+        required=False,
         label="Areas included in this assessment",
     )
 
@@ -264,10 +265,12 @@ class RoomAssessmentForm(forms.ModelForm):
 
     class Meta:
         model = RoomAssessment
-        fields = (
+        fields = [
             "assessment_date",
             "assessed_by",
             "overall_status",
+            "assessment_type",
+            "assessed_areas",
             "audio_status",
             "audio_notes",
             "video_status",
@@ -283,61 +286,97 @@ class RoomAssessmentForm(forms.ModelForm):
             "notes",
             "follow_up_required",
             "follow_up_notes",
-        )
+        ]
         widgets = {
             "assessment_date": forms.DateInput(attrs={"type": "date"}),
-            "audio_notes": forms.Textarea(attrs={"rows": 3}),
-            "video_notes": forms.Textarea(attrs={"rows": 3}),
-            "network_notes": forms.Textarea(attrs={"rows": 3}),
-            "printing_notes": forms.Textarea(attrs={"rows": 3}),
-            "assistive_listening_notes": forms.Textarea(attrs={"rows": 3}),
-            "power_notes": forms.Textarea(attrs={"rows": 3}),
-            "notes": forms.Textarea(attrs={"rows": 4}),
+            "notes": forms.Textarea(attrs={"rows": 3}),
             "follow_up_notes": forms.Textarea(attrs={"rows": 3}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        all_areas = list(RoomAssessmentArea.values)
-
         if self.instance and self.instance.pk:
-            self.fields["assessment_type"].initial = self.instance.assessment_type
-            self.fields["assessed_areas"].initial = self.instance.assessed_areas or []
-        else:
-            self.fields["assessed_areas"].initial = all_areas
-
-        selected_areas = (
-            (
-                self.data.getlist("assessed_areas")
-                if hasattr(self.data, "getlist")
-                else self.data.get("assessed_areas", [])
+            self.initial.setdefault(
+                "assessment_type",
+                self.instance.assessment_type,
             )
+            self.initial.setdefault(
+                "assessed_areas",
+                self.instance.assessed_areas or [],
+            )
+        else:
+            self.initial.setdefault(
+                "assessment_type",
+                RoomAssessmentType.FULL,
+            )
+            self.initial.setdefault(
+                "assessed_areas",
+                list(self.AREA_FIELDS.keys()),
+            )
+
+        # QueryDict supports getlist(); ordinary dictionaries do not.
+        if self.is_bound:
+            if hasattr(self.data, "getlist"):
+                selected_areas = self.data.getlist("assessed_areas")
+            else:
+                selected_areas = self.data.get("assessed_areas", [])
+                if isinstance(selected_areas, str):
+                    selected_areas = [selected_areas]
+                else:
+                    selected_areas = list(selected_areas or [])
+        else:
+            selected_areas = self.initial.get("assessed_areas", [])
+            if isinstance(selected_areas, str):
+                selected_areas = [selected_areas]
+            else:
+                selected_areas = list(selected_areas or [])
+
+        assessment_type = (
+            self.data.get("assessment_type")
             if self.is_bound
-            else self.fields["assessed_areas"].initial
+            else self.initial.get("assessment_type")
         )
 
-        # Status fields are required only when their area is included.
+        if assessment_type == RoomAssessmentType.FULL:
+            selected_areas = list(self.AREA_FIELDS.keys())
+
+        self.selected_areas = set(selected_areas)
+
         for area, (status_field, notes_field) in self.AREA_FIELDS.items():
-            included = area in selected_areas
-            self.fields[status_field].required = included
+            self.fields[status_field].required = area in self.selected_areas
             self.fields[notes_field].required = False
+
+        if not self.is_bound:
+            self.initial.setdefault("assessment_type", "full")
+            self.fields["assessed_areas"].initial = [
+                value for value, label in self.fields["assessed_areas"].choices
+            ]
 
     def clean(self):
         cleaned_data = super().clean()
 
         assessment_type = cleaned_data.get("assessment_type")
-        assessed_areas = cleaned_data.get("assessed_areas") or []
+        selected_areas = cleaned_data.get("assessed_areas") or []
 
         if assessment_type == RoomAssessmentType.FULL:
-            cleaned_data["assessed_areas"] = list(RoomAssessmentArea.values)
+            selected_areas = list(self.AREA_FIELDS.keys())
+            cleaned_data["assessed_areas"] = selected_areas
 
         elif assessment_type == RoomAssessmentType.FOCUSED:
-            if not assessed_areas:
+            if not selected_areas:
                 self.add_error(
                     "assessed_areas",
                     "Select at least one area for a focused assessment.",
                 )
+
+        for area, (status_field, _notes_field) in self.AREA_FIELDS.items():
+            if area in selected_areas:
+                if not cleaned_data.get(status_field):
+                    self.add_error(
+                        status_field,
+                        "A status is required for every area included in this assessment.",
+                    )
 
         if (
             cleaned_data.get("follow_up_required")
@@ -345,140 +384,25 @@ class RoomAssessmentForm(forms.ModelForm):
         ):
             self.add_error(
                 "follow_up_notes",
-                "Enter the action needed when follow-up is required.",
+                "Enter the action needed.",
             )
-
-        for area, (status_field, notes_field) in self.AREA_FIELDS.items():
-            if area not in (cleaned_data.get("assessed_areas") or []):
-                continue
-
-            if not cleaned_data.get(status_field):
-                self.add_error(
-                    status_field,
-                    "Select a status for each area included in the assessment.",
-                )
 
         return cleaned_data
 
     def save(self, commit=True):
-        assessment = super().save(commit=False)
-        assessment.assessment_type = self.cleaned_data["assessment_type"]
-        assessment.assessed_areas = self.cleaned_data["assessed_areas"]
+        instance = super().save(commit=False)
+
+        instance.assessment_type = self.cleaned_data["assessment_type"]
+        instance.assessed_areas = list(self.cleaned_data.get("assessed_areas") or [])
+
+        if instance.assessment_type == RoomAssessmentType.FULL:
+            instance.assessed_areas = list(self.AREA_FIELDS.keys())
 
         if commit:
-            assessment.save()
+            instance.save()
             self.save_m2m()
 
-        return assessment
-
-    class Meta:
-        model = RoomAssessment
-        fields = (
-            "assessment_date",
-            "assessed_by",
-            "overall_status",
-            "audio_status",
-            "audio_notes",
-            "video_status",
-            "video_notes",
-            "network_status",
-            "network_notes",
-            "printing_status",
-            "printing_notes",
-            "assistive_listening_status",
-            "assistive_listening_notes",
-            "power_status",
-            "power_notes",
-            "notes",
-            "follow_up_required",
-            "follow_up_notes",
-        )
-        widgets = {
-            "assessment_date": forms.DateInput(attrs={"type": "date"}),
-            "audio_notes": forms.Textarea(attrs={"rows": 3}),
-            "video_notes": forms.Textarea(attrs={"rows": 3}),
-            "network_notes": forms.Textarea(attrs={"rows": 3}),
-            "printing_notes": forms.Textarea(attrs={"rows": 3}),
-            "assistive_listening_notes": forms.Textarea(attrs={"rows": 3}),
-            "power_notes": forms.Textarea(attrs={"rows": 3}),
-            "notes": forms.Textarea(attrs={"rows": 4}),
-            "follow_up_notes": forms.Textarea(attrs={"rows": 3}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        all_areas = list(RoomAssessmentArea.values)
-
-        if self.instance and self.instance.pk:
-            self.fields["assessment_type"].initial = self.instance.assessment_type
-            self.fields["assessed_areas"].initial = self.instance.assessed_areas or []
-        else:
-            self.fields["assessed_areas"].initial = all_areas
-
-        selected_areas = (
-            (
-                self.data.getlist("assessed_areas")
-                if hasattr(self.data, "getlist")
-                else self.data.get("assessed_areas", [])
-            )
-            if self.is_bound
-            else self.fields["assessed_areas"].initial
-        )
-
-        # Status fields are required only when their area is included.
-        for area, (status_field, notes_field) in self.AREA_FIELDS.items():
-            included = area in selected_areas
-            self.fields[status_field].required = included
-            self.fields[notes_field].required = False
-
-    def clean(self):
-        cleaned_data = super().clean()
-
-        assessment_type = cleaned_data.get("assessment_type")
-        assessed_areas = cleaned_data.get("assessed_areas") or []
-
-        if assessment_type == RoomAssessmentType.FULL:
-            cleaned_data["assessed_areas"] = list(RoomAssessmentArea.values)
-
-        elif assessment_type == RoomAssessmentType.FOCUSED:
-            if not assessed_areas:
-                self.add_error(
-                    "assessed_areas",
-                    "Select at least one area for a focused assessment.",
-                )
-
-        if (
-            cleaned_data.get("follow_up_required")
-            and not (cleaned_data.get("follow_up_notes") or "").strip()
-        ):
-            self.add_error(
-                "follow_up_notes",
-                "Enter the action needed when follow-up is required.",
-            )
-
-        for area, (status_field, notes_field) in self.AREA_FIELDS.items():
-            if area not in (cleaned_data.get("assessed_areas") or []):
-                continue
-
-            if not cleaned_data.get(status_field):
-                self.add_error(
-                    status_field,
-                    "Select a status for each area included in the assessment.",
-                )
-
-        return cleaned_data
-
-    def save(self, commit=True):
-        assessment = super().save(commit=False)
-        assessment.assessment_type = self.cleaned_data["assessment_type"]
-        assessment.assessed_areas = self.cleaned_data["assessed_areas"]
-
-        if commit:
-            assessment.save()
-            self.save_m2m()
-
-        return assessment
+        return instance
 
 
 WIZARD_FORMS = {
